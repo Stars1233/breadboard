@@ -53,6 +53,8 @@ export const runBoard = async ({
     await writer.write(["error", "Data store not available."]);
     return;
   }
+  // TODO: Figure out if this is the right thing to do here.
+  store.createGroup("run-board");
 
   let inputsToConsume = next ? undefined : inputs;
 
@@ -75,7 +77,6 @@ export const runBoard = async ({
 
   for await (const result of runner) {
     const { type, data, reply } = result;
-    console.log("Run result", type, data);
     switch (type) {
       case "input": {
         if (inputsToConsume && Object.keys(inputsToConsume).length > 0) {

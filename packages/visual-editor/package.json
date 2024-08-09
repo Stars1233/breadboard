@@ -24,10 +24,6 @@
     "./core-kit.js": "./build/core-kit.js",
     "./json-kit.js": "./build/json-kit.js",
     "./template-kit.js": "./build/template-kit.js",
-    "./editor": {
-      "types": "./build/ui/elements/editor/editor.d.ts",
-      "default": "./build/ui/elements/editor/editor.js"
-    },
     "./providers": {
       "types": "./build/providers/types.d.ts",
       "default": "./build/providers/types.js"
@@ -52,6 +48,7 @@
         "../agent-kit:build",
         "../breadboard:build",
         "../build:build",
+        "../shared-ui:build",
         "../core-kit:build",
         "../data-store:build",
         "../example-boards:build",
@@ -71,6 +68,7 @@
       "dependencies": [
         "../agent-kit:build:tsc",
         "../breadboard:build:tsc",
+        "../shared-ui:build:tsc",
         "../build:build:tsc",
         "../core-kit:build:tsc",
         "../data-store:build:tsc",
@@ -256,7 +254,7 @@
     "@typescript-eslint/parser": "^7.18.0",
     "ava": "^5.2.0",
     "dotenv": "^16.4.5",
-    "tsx": "^4.16.5",
+    "tsx": "^4.17.0",
     "typescript": "^5.5.4",
     "vite-plugin-full-reload": "^1.2.0",
     "vite-plugin-watch-and-run": "^1.7.0",
@@ -269,8 +267,9 @@
     "@breadboard-ai/example-boards": "0.2.1",
     "@breadboard-ai/google-drive-kit": "0.2.2",
     "@breadboard-ai/manifest": "^0.4.1",
+    "@breadboard-ai/shared-ui": "^1.15.0",
     "@breadboard-ai/python-wasm": "0.1.4",
-    "@codemirror/autocomplete": "^6.17.0",
+    "@codemirror/autocomplete": "^6.18.0",
     "@codemirror/commands": "^6.6.0",
     "@codemirror/lang-javascript": "^6.2.2",
     "@dagrejs/dagre": "^1.1.3",
@@ -291,8 +290,8 @@
     "codemirror": "^6.0.1",
     "idb-keyval": "^6.2.1",
     "idb": "^8.0.0",
-    "lit": "^3.1.4",
+    "lit": "^3.2.0",
     "markdown-it": "^14.1.0",
-    "pixi.js": "^8.2.6"
+    "pixi.js": "^8.3.2"
   }
 }

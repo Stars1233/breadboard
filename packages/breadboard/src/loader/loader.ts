@@ -10,7 +10,6 @@ import type {
   GraphLoader,
   GraphLoaderContext,
 } from "./types.js";
-import { DefaultGraphProvider } from "./default.js";
 
 export const SENTINEL_BASE_URL = new URL("sentinel://sentinel/sentinel");
 
@@ -36,7 +35,7 @@ export class Loader implements GraphLoader {
   #graphProviders: GraphProvider[];
 
   constructor(graphProviders: GraphProvider[]) {
-    this.#graphProviders = [...graphProviders, new DefaultGraphProvider()];
+    this.#graphProviders = graphProviders;
   }
 
   async #loadWithProviders(url: URL): Promise<GraphDescriptor | null> {
@@ -46,7 +45,8 @@ export class Loader implements GraphLoader {
         continue;
       }
       if (capabilities.load) {
-        const graph = await provider.load(url);
+        const response = await provider.load(url);
+        const graph: GraphDescriptor = typeof response == "string" ? JSON.parse(response) : response;
         if (graph !== null) {
           // TODO: Remove this on 2024/9/1. By then, surely all of the graphs
           // would have migrated to use the new name.

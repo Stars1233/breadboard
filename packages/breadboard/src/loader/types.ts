@@ -4,13 +4,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { GraphDescriptor } from "@google-labs/breadboard-schema/graph.js";
+import {
+  GraphDescriptor,
+  GraphTag,
+  NodeConfiguration,
+  NodeIdentifier,
+} from "@breadboard-ai/types";
+import { Kit } from "../types.js";
 
 export type GraphProviderItem = {
   url: string;
   username?: string;
   title?: string;
-  tags?: string[];
+  tags?: GraphTag[];
   mine: boolean;
   readonly: boolean;
   handle: unknown;
@@ -20,6 +26,7 @@ export type GraphProviderStore = {
   permission: "unknown" | "prompt" | "granted";
   title: string;
   items: Map<string, GraphProviderItem>;
+  url?: string;
 };
 
 export type GraphProviderChange = {
@@ -207,6 +214,10 @@ export type GraphProvider = {
    * Provides a way to watch for changes in the store.
    */
   preview: (url: URL) => Promise<URL>;
+  /**
+   * Provides a way to watch for changes in the store.
+   */
+  renewAccess?: () => Promise<void>;
 };
 
 /**
@@ -251,3 +262,123 @@ export type GraphLoader = {
     context: GraphLoaderContext
   ) => Promise<GraphDescriptor | null>;
 };
+
+/**
+ * Board Server Types
+ */
+export type Username = string;
+export type UserApiKey = string;
+
+export interface BoardServerCapabilities {
+  connect: boolean;
+  disconnect: boolean;
+  refresh: boolean;
+  watch: boolean;
+  preview: boolean;
+}
+
+export interface BoardServerConfiguration {
+  url: URL;
+  projects: Promise<BoardServerProject[]>;
+  kits: Kit[];
+  users: User[];
+  secrets: Secrets;
+  extensions: BoardServerExtension[];
+  capabilities: BoardServerCapabilities;
+}
+
+export interface BoardServer extends GraphProvider, BoardServerConfiguration {
+  user: User;
+  getAccess(url: URL, user: User): Promise<Permission>;
+}
+
+export interface EntityMetadata {
+  owner: Username;
+  access: Map<Username, Permission>;
+  title?: string;
+  description?: string;
+  icon?: string;
+  tags?: GraphTag[];
+}
+
+export interface Entity {
+  url: URL;
+  metadata: EntityMetadata;
+}
+
+export interface HostAPI {
+  send(method: string, args: unknown[]): Promise<void>;
+}
+
+interface BoardServerGraphActions {
+  onStart(api: HostAPI): Promise<void>;
+  onStop(api: HostAPI): Promise<void>;
+}
+
+interface BoardServerNodeActions {
+  onSelect(
+    api: HostAPI,
+    id: NodeIdentifier,
+    type: string,
+    configuration: NodeConfiguration
+  ): Promise<void>;
+  onAction(
+    api: HostAPI,
+    action: string,
+    kits: Kit[],
+    id: NodeIdentifier,
+    type: string,
+    configuration: NodeConfiguration
+  ): Promise<void>;
+  onDeselect(api: HostAPI, id: NodeIdentifier): Promise<void>;
+}
+
+export interface BoardServerExtension extends Entity {
+  node: BoardServerNodeActions;
+  graph: BoardServerGraphActions;
+}
+
+export type BoardServerExtensionNamespace = keyof Pick<
+  BoardServerExtension,
+  "node" | "graph"
+>;
+
+export interface BoardServerProject extends Entity {
+  board?: Board;
+  handle?: unknown;
+}
+
+export interface User {
+  username: Username;
+  apiKey: UserApiKey;
+  secrets: Secrets /* Used in preference to Board Server equivalents */;
+}
+
+export type Secrets = Map<string, string>;
+
+export type Permission = {
+  create: boolean;
+  retrieve: boolean;
+  update: boolean;
+  delete: boolean;
+};
+
+export interface Board extends Entity {
+  theme?: string;
+  descriptor: GraphDescriptor;
+  runs?: Run[];
+  evaluations?: Evaluation[];
+}
+
+export interface Run {
+  metadata: {
+    dateTime: Date;
+    title?: string;
+  };
+  descriptor: GraphDescriptor;
+  status: string;
+}
+
+export interface Evaluation {
+  runs: Run[];
+}

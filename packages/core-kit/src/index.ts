@@ -6,40 +6,45 @@
 
 import { KitBuilder } from "@google-labs/breadboard/kits";
 
+import append from "./nodes/append.js";
+import batch from "./nodes/batch.js";
+import { castNode } from "./nodes/cast.js";
+import fetch from "./nodes/fetch.js";
 import importHandler from "./nodes/import.js";
 import include from "./nodes/include.js";
 import invoke from "./nodes/invoke.js";
-import resolve from "./nodes/resolve.js";
-import passthrough from "./nodes/passthrough.js";
-import reflect from "./nodes/reflect.js";
-import slot from "./nodes/slot.js";
 import map from "./nodes/map.js";
-import reduce, { ReduceInputs, ReduceOutputs } from "./nodes/reduce.js";
-import batch from "./nodes/batch.js";
-import append from "./nodes/append.js";
-import fetch from "./nodes/fetch.js";
+import passthrough from "./nodes/passthrough.js";
+import reduce from "./nodes/reduce.js";
+import reflect from "./nodes/reflect.js";
+import resolve from "./nodes/resolve.js";
 import runJavascript from "./nodes/run-javascript.js";
 import secrets from "./nodes/secrets.js";
 import service from "./nodes/service.js";
+import slot from "./nodes/slot.js";
 import { unnestNode } from "./nodes/unnest.js";
-import { castNode } from "./nodes/cast.js";
 
+export { cast, castNode } from "./nodes/cast.js";
 export { code } from "./nodes/code.js";
+export type { CodeNode } from "./nodes/code.js";
 export { default as fetch } from "./nodes/fetch.js";
 export { default as invoke } from "./nodes/invoke.js";
+export { map, default as mapNode } from "./nodes/map.js";
 export { default as passthrough } from "./nodes/passthrough.js";
 export { default as runJavascript } from "./nodes/run-javascript.js";
 export { secret, default as secrets } from "./nodes/secrets.js";
 export { unnest, unnestNode } from "./nodes/unnest.js";
-export { cast, castNode } from "./nodes/cast.js";
-export { default as mapNode, map } from "./nodes/map.js";
+import { storeDataNode } from "./nodes/storeData.js";
+import { retrieveDataNode } from "./nodes/retrieveData.js";
 
-const builder = new KitBuilder({
+const metadata = {
   title: "Core Kit",
   description: "A Breadboard kit that enables composition and reuse of boards",
   version: "0.0.1",
   url: "npm:@google-labs/core-kit",
-});
+};
+
+const builder = new KitBuilder(metadata);
 
 export const Core = builder.build({
   /**
@@ -211,6 +216,9 @@ export const Core = builder.build({
   cast: castNode,
 
   service,
+
+  storeData: storeDataNode,
+  retrieveData: retrieveDataNode,
 });
 
 export type Core = InstanceType<typeof Core>;
@@ -223,17 +231,17 @@ export default Core;
  * This should transition to a codegen step, with typescript types constructed
  * from .describe() calls.
  */
+import { kit, NodeFactoryFromDefinition } from "@breadboard-ai/build";
 import {
   addKit,
-  NewNodeValue as NodeValue,
   NewInputValues as InputValues,
-  NewOutputValues as OutputValues,
   NewNodeFactory as NodeFactory,
+  NewNodeValue as NodeValue,
+  NewOutputValues as OutputValues,
 } from "@google-labs/breadboard";
-import curry, { CurryInputs, CurryOutputs } from "./nodes/curry.js";
+import curry from "./nodes/curry.js";
 import deflate from "./nodes/deflate.js";
 import inflate from "./nodes/inflate.js";
-import { NodeFactoryFromDefinition } from "@breadboard-ai/build";
 
 export type CoreKitType = {
   passthrough: NodeFactory<InputValues, OutputValues>;
@@ -300,13 +308,49 @@ export type CoreKitType = {
     },
     { list: NodeValue[] }
   >;
-  reduce: NodeFactory<ReduceInputs, ReduceOutputs>;
+  reduce: NodeFactory<
+    {
+      /**
+       * The list to iterate over.
+       */
+      list: unknown[];
+
+      /**
+       * The board to run for each element of the list.
+       */
+      board?: unknown;
+
+      /**
+       * The initial value for the accumulator.
+       */
+      accumulator?: unknown;
+    },
+    {
+      /**
+       * The current value of the accumulator.
+       */
+      accumulator: NodeValue;
+
+      /**
+       * The current item from the list.
+       */
+      item: NodeValue;
+    }
+  >;
   /**
    * Combines a board with some arguments to create a new board (aka currying).
    * The arguments in that board will run as part of board invocation as if
    * they were supplied as inputs.
    */
-  curry: NodeFactory<CurryInputs, CurryOutputs>;
+  curry: NodeFactory<
+    {
+      $board: unknown;
+      [key: string]: unknown;
+    },
+    {
+      board: unknown;
+    }
+  >;
   fetch: NodeFactory<
     { url: string },
     {
@@ -340,3 +384,25 @@ export type CoreKitType = {
  * and invoke a board for each item.
  */
 export const core = addKit(Core) as unknown as CoreKitType;
+
+export const coreKit = await kit({
+  ...metadata,
+  components: {
+    cast: castNode,
+    curry,
+    deflate,
+    fetch,
+    inflate,
+    invoke,
+    map,
+    passthrough,
+    reduce,
+    resolve,
+    runJavascript,
+    secrets,
+    service,
+    unnest: unnestNode,
+    storeData: storeDataNode,
+    retrieveData: retrieveDataNode,
+  },
+});

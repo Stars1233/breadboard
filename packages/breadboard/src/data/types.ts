@@ -4,60 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import type {
+  DataStoreHandle,
+  InlineDataCapabilityPart,
+  StoredDataCapabilityPart,
+} from "@breadboard-ai/types";
 import { HarnessRunResult } from "../harness/types.js";
 import { ReanimationState } from "../run/types.js";
-
-export type FunctionCallCapabilityPart = {
-  functionCall: {
-    name: string;
-    args: object;
-  };
-};
-
-export type FunctionResponseCapabilityPart = {
-  functionResponse: {
-    name: string;
-    response: object;
-  };
-};
-
-export type TextCapabilityPart = {
-  text: string;
-};
-
-export type DataPart =
-  | InlineDataCapabilityPart
-  | StoredDataCapabilityPart
-  | FunctionCallCapabilityPart
-  | FunctionResponseCapabilityPart
-  | TextCapabilityPart;
-
-export type LLMContent = {
-  role?: string;
-  parts: DataPart[];
-};
-
-/**
- * Represents inline data, encoded as a base64 string.
- */
-export type InlineDataCapabilityPart = {
-  inlineData: {
-    mimeType: string;
-    data: string;
-  };
-};
-
-/**
- * Represents data that is stored by a DataStoreProvider.
- */
-export type StoredDataCapabilityPart = {
-  storedData: {
-    handle: DataStoreHandle;
-    mimeType: string;
-  };
-};
-
-export type DataStoreHandle = string;
+import { Schema } from "../types.js";
 
 export type StoredData = {
   asInline(): Promise<InlineDataCapabilityPart>;
@@ -110,9 +64,46 @@ export type DataStore = {
     storeId?: string
   ): Promise<SerializedDataStoreGroup | null>;
   store(blob: Blob, storeId?: string): Promise<StoredDataCapabilityPart>;
+  /**
+   * Store a value for later use.
+   *
+   * @param key -- the key to store the value under
+   * @param value -- the value to store, including null
+   * @param schema -- the schema of the data to store
+   * @param scope -- the scope to store the data in
+   */
+  storeData(
+    key: string,
+    value: object | null,
+    schema: Schema,
+    scope: DataStoreScope
+  ): Promise<StoreDataResult>;
+  retrieveData(key: string): Promise<RetrieveDataResult>;
 };
 
 export type StateStore = {
   load(key?: string): Promise<ReanimationState | undefined>;
   save(state: ReanimationState): Promise<string>;
 };
+
+export type StoreDataResult =
+  | {
+      success: true;
+    }
+  | {
+      success: false;
+      error: string;
+    };
+
+export type RetrieveDataResult =
+  | {
+      success: true;
+      value: object | null;
+      schema: Schema;
+    }
+  | {
+      success: false;
+      error: string;
+    };
+
+export type DataStoreScope = "run" | "session" | "client";

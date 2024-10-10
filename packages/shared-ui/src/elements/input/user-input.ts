@@ -3,46 +3,66 @@
  * Copyright 2024 Google LLC
  * SPDX-License-Identifier: Apache-2.0
  */
-import { LitElement, html, css, HTMLTemplateResult, nothing } from "lit";
-import { customElement, property } from "lit/decorators.js";
-import { UserInputConfiguration, UserOutputValues } from "../../types/types";
-import { map } from "lit/directives/map.js";
-import {
-  isLLMContentArrayBehavior,
-  isBoardBehavior,
-  isCodeBehavior,
-  isGoogleDriveFileId,
-  isGoogleDriveQuery,
-  isLLMContentBehavior,
-  isPortSpecBehavior,
-  isSelect,
-} from "../../utils/index.js";
-import { classMap } from "lit/directives/class-map.js";
-import { createRef, ref, Ref } from "lit/directives/ref.js";
-import { CodeEditor, LLMInput, LLMInputArray } from "../elements";
+import { LLMContent } from "@breadboard-ai/types";
 import {
   GraphDescriptor,
   GraphProvider,
   isLLMContent,
-  LLMContent,
+  isLLMContentArray,
   NodeValue,
 } from "@google-labs/breadboard";
+import {
+  css,
+  html,
+  HTMLTemplateResult,
+  LitElement,
+  nothing,
+  PropertyValues,
+} from "lit";
+import { customElement, property } from "lit/decorators.js";
+import { classMap } from "lit/directives/class-map.js";
+import { map } from "lit/directives/map.js";
+import { createRef, ref, Ref } from "lit/directives/ref.js";
+import { UserOutputEvent } from "../../events/events";
+import { UserInputConfiguration, UserOutputValues } from "../../types/types";
+import {
+  isBoardBehavior,
+  isCodeBehavior,
+  isEnum,
+  isGoogleDriveFileId,
+  isGoogleDriveQuery,
+  isLLMContentArrayBehavior,
+  isLLMContentBehavior,
+  isPortSpecBehavior,
+  isSelect,
+} from "../../utils/index.js";
+import {
+  createAllowListFromProperty,
+  getMinItemsFromProperty,
+} from "../../utils/llm-content";
 import {
   assertIsLLMContent,
   resolveArrayType,
   resolveBehaviorType,
 } from "../../utils/schema";
 import {
-  createAllowListFromProperty,
-  getMinItemsFromProperty,
-} from "../../utils/llm-content";
-import { UserOutputEvent } from "../../events/events";
+  CodeEditor,
+  LLMInput,
+  LLMInputArray,
+  StreamlinedSchemaEditor,
+} from "../elements";
 import "./delegating-input.js";
 
 @customElement("bb-user-input")
 export class UserInput extends LitElement {
   @property()
   inputs: UserInputConfiguration[] = [];
+
+  @property()
+  showTitleInfo = true;
+
+  @property()
+  jumpTo: string | null = null;
 
   @property()
   showTypes = false;
@@ -80,6 +100,7 @@ export class UserInput extends LitElement {
     }
 
     .item {
+      scroll-margin-top: var(--bb-grid-size-2);
       color: var(--bb-neutral-900);
       margin-bottom: var(--bb-grid-size-2);
     }
@@ -120,12 +141,10 @@ export class UserInput extends LitElement {
       box-sizing: border-box;
     }
 
+    .item.status.connected.configured .title::before,
     .item.status.connected .title::before {
-      background: var(--bb-inputs-300);
-    }
-
-    .item.status.connected.configured .title::before {
-      background: var(--bb-boards-500);
+      background: var(--bb-ui-300);
+      border: 1px solid var(--bb-ui-600);
     }
 
     .item.status.missing .title::before {
@@ -157,7 +176,39 @@ export class UserInput extends LitElement {
       field-sizing: content;
       max-height: 300px;
     }
+
+    .api-message {
+      color: var(--bb-neutral-800);
+      font: 400 var(--bb-body-small) / var(--bb-body-line-height-small)
+        var(--bb-font-family);
+      margin: 0 0 var(--bb-grid-size-2) 0;
+    }
   `;
+
+  protected firstUpdated(changedProperties: PropertyValues): void {
+    if (!changedProperties.has("jumpTo")) {
+      return;
+    }
+
+    requestAnimationFrame(() => {
+      if (!this.#formRef.value) {
+        return;
+      }
+
+      if (!this.jumpTo) {
+        return;
+      }
+
+      const item = this.#formRef.value.querySelector(
+        `#container-${this.#createId(this.jumpTo)}`
+      );
+      item?.scrollIntoView({
+        behavior: "instant",
+        block: "start",
+        inline: "start",
+      });
+    });
+  }
 
   destroyEditors() {
     // Here we must unhook the editor *before* it is removed from the DOM,
@@ -170,6 +221,12 @@ export class UserInput extends LitElement {
       "bb-code-editor"
     )) {
       editor.destroy();
+    }
+
+    for (const editor of this.#formRef.value.querySelectorAll<StreamlinedSchemaEditor>(
+      "bb-streamlined-schema-editor"
+    )) {
+      editor.destroyEditorsIfNeeded();
     }
   }
 
@@ -187,6 +244,15 @@ export class UserInput extends LitElement {
         this.#formRef.value.reportValidity();
       }
       return null;
+    }
+
+    for (const editor of this.#formRef.value.querySelectorAll<StreamlinedSchemaEditor>(
+      "bb-streamlined-schema-editor"
+    )) {
+      if (!editor.checkValidity()) {
+        editor.reportValidity();
+        return null;
+      }
     }
 
     const outputs: UserOutputValues = this.inputs
@@ -282,7 +348,10 @@ export class UserInput extends LitElement {
   }
 
   #createId(name: string) {
-    return name.replace(/^\$/, "__");
+    return name
+      .toLocaleLowerCase()
+      .replace(/[\s\W]/gi, "-")
+      .replace(/^\$/, "__");
   }
 
   render() {
@@ -309,12 +378,19 @@ export class UserInput extends LitElement {
             >`;
           }
 
-          const unparsedDefaultValue =
-            input.schema.examples && input.schema.examples.length > 0
-              ? input.schema.examples[0]
-              : typeof input.schema.default === "string"
-                ? input.schema.default
-                : "";
+          let unparsedDefaultValue = "";
+          if (input.schema.examples && input.schema.examples.length > 0) {
+            unparsedDefaultValue = input.schema.examples[0];
+          } else if (typeof input.schema.default === "string") {
+            unparsedDefaultValue = input.schema.default;
+          } else if (isLLMContentArrayBehavior(input.schema)) {
+            if (
+              typeof input.schema.items === "object" &&
+              !Array.isArray(input.schema.items)
+            ) {
+              unparsedDefaultValue = input.schema.items.default ?? "";
+            }
+          }
 
           let defaultValue: unknown = unparsedDefaultValue;
           try {
@@ -325,7 +401,11 @@ export class UserInput extends LitElement {
               input.schema.type === "array"
             ) {
               if (defaultValue !== "") {
-                defaultValue = JSON.parse(unparsedDefaultValue);
+                try {
+                  defaultValue = JSON.parse(unparsedDefaultValue);
+                } catch (err) {
+                  defaultValue = null;
+                }
               } else {
                 defaultValue = null;
               }
@@ -362,11 +442,15 @@ export class UserInput extends LitElement {
                 if (isLLMContentArrayBehavior(input.schema)) {
                   let value: LLMContent[] | null =
                     (input.value as LLMContent[]) ?? null;
-                  if (!value) {
-                    const unparsedValue = input.schema.default;
-                    value = unparsedValue
-                      ? JSON.parse(unparsedValue)
-                      : [{ parts: [], role: "user" }];
+                  // First, check to see if the default value is available and
+                  // use that if the value is not set.
+                  if (!value && isLLMContentArray(defaultValue)) {
+                    value = defaultValue;
+                  }
+                  // Finally, if there is no default value, set the value to an
+                  // array consisting of a single empty LLMContent.
+                  if (!value || value.length === 0) {
+                    value = [{ role: "user", parts: [] }];
                   }
 
                   const allow = createAllowListFromProperty(input.schema);
@@ -418,13 +502,21 @@ export class UserInput extends LitElement {
 
               case "object": {
                 if (isPortSpecBehavior(input.schema)) {
-                  inputField = html`<bb-schema-editor
+                  if (typeof input.value === "string") {
+                    try {
+                      input.value = JSON.parse(input.value);
+                    } catch (err) {
+                      console.warn(`Unable to convert value`);
+                    }
+                  }
+
+                  inputField = html`<bb-streamlined-schema-editor
                     id=${id}
                     name=${id}
                     .nodeId=${input.name}
                     .schema=${input.value}
                     .schemaVersion=${0}
-                  ></bb-schema-editor>`;
+                  ></bb-streamlined-schema-editor>`;
                   break;
                 } else if (isLLMContentBehavior(input.schema)) {
                   if (!isLLMContent(input.value)) {
@@ -538,8 +630,13 @@ export class UserInput extends LitElement {
                   break;
                 }
 
-                if (isSelect(input.schema) && input.schema.enum) {
-                  const enumValue = input.value ?? defaultValue ?? "";
+                if (isSelect(input.schema)) {
+                  const options = isEnum(input.schema)
+                    ? input.schema.enum || []
+                    : input.schema.examples || [];
+
+                  const selectValue = input.value ?? defaultValue ?? "";
+
                   inputField = html`<select
                     id=${id}
                     name=${id}
@@ -547,16 +644,16 @@ export class UserInput extends LitElement {
                     placeholder=${input.schema.description ?? ""}
                     .autofocus=${idx === 0 ? true : false}
                   >
-                    ${input.schema.enum.map(
+                    ${options.map(
                       (item) =>
-                        html`<option ?selected=${item === enumValue}>
+                        html`<option ?selected=${item === selectValue}>
                           ${item}
                         </option>`
                     )}
                   </select>`;
+
                   break;
                 }
-
                 if (
                   input.schema.format === "multiline" ||
                   input.schema.format === "markdown"
@@ -635,9 +732,20 @@ export class UserInput extends LitElement {
           typeInfo = html`<span class="type">(${typeString})</span>`;
         }
 
-        return html`<div class=${classMap(styles)}>
+        return html`<div
+          id=${this.#createId(`container-${input.name}`)}
+          class=${classMap(styles)}
+        >
           <label>
-            <span class="title">${input.title} ${typeInfo}</span>
+            ${input.secret
+              ? html`<p class="api-message">
+                  When calling an API, the API provider's applicable privacy
+                  policy and terms apply
+                </p>`
+              : nothing}
+            ${this.showTitleInfo
+              ? html`<span class="title">${input.title} ${typeInfo}</span>`
+              : nothing}
             ${description}
           </label>
           ${inputField}

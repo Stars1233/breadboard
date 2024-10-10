@@ -3,14 +3,14 @@
  * Copyright 2024 Google LLC
  * SPDX-License-Identifier: Apache-2.0
  */
-import { LitElement, html, css, nothing, PropertyValueMap } from "lit";
+import type { LLMContent } from "@breadboard-ai/types";
+import { LitElement, PropertyValueMap, css, html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
-import { AllowedLLMContentTypes } from "../../../types/types.js";
+import { classMap } from "lit/directives/class-map.js";
 import { map } from "lit/directives/map.js";
 import { Ref, createRef, ref } from "lit/directives/ref.js";
+import { AllowedLLMContentTypes } from "../../../types/types.js";
 import { LLMInput } from "./llm-input.js";
-import { classMap } from "lit/directives/class-map.js";
-import { LLMContent } from "@google-labs/breadboard";
 
 @customElement("bb-llm-input-array")
 export class LLMInputArray extends LitElement {
@@ -64,6 +64,10 @@ export class LLMInputArray extends LitElement {
       font: 400 var(--bb-body-small) / var(--bb-body-line-height-small)
         var(--bb-font-family);
       margin: 0 0 var(--bb-grid-size-2) 0;
+    }
+
+    header::empty {
+      margin: 0;
     }
 
     #controls {
@@ -194,10 +198,8 @@ export class LLMInputArray extends LitElement {
   }
 
   render() {
-    return html`<header>
-        ${this.description ? html`${this.description}` : nothing}
-      </header>
-
+    return html`
+      ${this.description ? html`<header>${this.description}</header>` : nothing}
       ${this.showEntrySelector
         ? html`<div id="controls">
             <h1>Role</h1>
@@ -253,6 +255,7 @@ export class LLMInputArray extends LitElement {
               ></bb-llm-input>`;
             })
           : html`No items specified`}
-      </div> `;
+      </div>
+    `;
   }
 }

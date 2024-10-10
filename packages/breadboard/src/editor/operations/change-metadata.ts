@@ -4,10 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import {
-  NodeIdentifier,
-  NodeMetadata,
-} from "@google-labs/breadboard-schema/graph.js";
+import { NodeIdentifier, NodeMetadata } from "@breadboard-ai/types";
 import {
   EditOperation,
   EditOperationContext,
@@ -25,7 +22,7 @@ export class ChangeMetadata implements EditOperation {
     if (!node) {
       return {
         success: false,
-        error: `Node with id "${id}" does not exist`,
+        error: `Unable to change metadata: node with id "${id}" does not exist`,
       };
     }
     return { success: true };

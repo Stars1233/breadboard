@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { GraphMetadata } from "@google-labs/breadboard-schema/graph.js";
+import type { GraphMetadata } from "@breadboard-ai/types";
 import type { GenericBoardDefinition } from "../board/board.js";
 import type { Convergence } from "../board/converge.js";
 import type {
@@ -66,13 +66,23 @@ export interface SerializableBoard {
   description?: string;
   version?: string;
   metadata?: GraphMetadata;
+  /**
+   * A custom describer. It's a separate board that can be
+   * used to describe the input and output schemas of this
+   * board.
+   */
+  describer?: GenericBoardDefinition;
 }
 
 export interface SerializableNode {
   id?: string;
   type: string;
   inputs: Record<string, SerializableInputPort>;
-  metadata?: { title?: string; description?: string };
+  metadata?: {
+    title?: string;
+    description?: string;
+    logLevel?: "debug" | "info";
+  };
 }
 
 export interface SerializableInputPort {

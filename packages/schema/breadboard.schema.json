@@ -1,5 +1,5 @@
 {
-	"$id": "https://raw.githubusercontent.com/breadboard-ai/breadboard/@google-labs/breadboard-schema@1.7.0/packages/schema/breadboard.schema.json",
+	"$id": "https://raw.githubusercontent.com/breadboard-ai/breadboard/@google-labs/breadboard-schema@1.8.1/packages/schema/breadboard.schema.json",
 	"$schema": "http://json-schema.org/draft-07/schema#",
 	"$ref": "#/definitions/GraphDescriptor",
 	"definitions": {
@@ -188,6 +188,9 @@
 			"additionalProperties": {
 				"$ref": "#/definitions/NodeValue"
 			},
+			"propertyNames": {
+				"description": "Unique identifier of a node's output."
+			},
 			"description": "Values that the `NodeHandler` outputs."
 		},
 		"NodeIdentifier": {
@@ -237,6 +240,42 @@
 					],
 					"additionalProperties": false,
 					"description": "The documentation for the graph, expressed as a URL and optional description."
+				},
+				"describer": {
+					"type": "string",
+					"description": "The URL of the graph that will act as the describer for this graph. Can be a relative URL and refer to a sub-graph within this graph."
+				},
+				"visual": {
+					"type": "object",
+					"properties": {
+						"window": {
+							"type": "object",
+							"properties": {
+								"x": {
+									"type": "number"
+								},
+								"y": {
+									"type": "number"
+								},
+								"width": {
+									"type": "number"
+								},
+								"height": {
+									"type": "number"
+								}
+							},
+							"required": [
+								"x",
+								"y",
+								"width",
+								"height"
+							],
+							"additionalProperties": false,
+							"description": "Last known position of the graph in the editor."
+						}
+					},
+					"additionalProperties": false,
+					"description": "The metadata associated with the visual representation of the graph."
 				}
 			},
 			"additionalProperties": {
@@ -361,9 +400,10 @@
 			"type": "string",
 			"enum": [
 				"published",
-				"tool"
+				"tool",
+				"experimental"
 			],
-			"description": "A tag that can be associated with a graph.\n- `published`: The graph is published (as opposed to a draft). It may be    used in production and shared with others.\n- `tool`: The graph is intended to be a tool."
+			"description": "A tag that can be associated with a graph.\n- `published`: The graph is published (as opposed to a draft). It may be    used in production and shared with others.\n- `tool`: The graph is intended to be a tool.\n- `experimental`: The graph is experimental and may not be stable."
 		},
 		"Edge": {
 			"type": "object",

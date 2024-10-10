@@ -40,26 +40,6 @@ export const styles = css`
     scrollbar-gutter: stable;
   }
 
-  #diagram {
-    border-right: 1px solid #d9d9d9;
-  }
-
-  #run {
-    background: var(--bb-selected-color);
-    color: #fff;
-    border-radius: 20px;
-    border: none;
-    font-size: var(--bb-label-large);
-    padding: var(--bb-grid-size-2) var(--bb-grid-size-8);
-    margin-right: var(--bb-grid-size-2);
-    cursor: pointer;
-  }
-
-  #run[disabled] {
-    opacity: 0.4;
-    cursor: auto;
-  }
-
   #stop {
     background: #fff var(--bb-icon-stop-circle) center center / 24px 24px
       no-repeat;
@@ -202,5 +182,10 @@ export const styles = css`
     width: 80vw;
     max-width: 320px;
     text-align: center;
+  }
+
+  bb-activity-log-lite {
+    padding: 0 var(--bb-grid-size-4) var(--bb-grid-size-10)
+      var(--bb-grid-size-4);
   }
 `;

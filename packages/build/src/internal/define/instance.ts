@@ -15,6 +15,7 @@ import {
   type OutputPortReference,
 } from "../common/port.js";
 import type { SerializableNode } from "../common/serializable.js";
+import type { KitBinding } from "../kit.js";
 import type { BreadboardType, JsonSerializable } from "../type-system/type.js";
 import type {
   DynamicInputPortConfig,
@@ -24,7 +25,7 @@ import type {
 } from "./config.js";
 
 export class Instance<
-  /* Inputs         */ I extends { [K: string]: JsonSerializable },
+  /* Inputs         */ I extends { [K: string]: JsonSerializable | undefined },
   /* Outputs        */ O extends { [K: string]: JsonSerializable | undefined },
   /* Dynamic Output */ DO extends JsonSerializable | undefined,
   /* Primary Input  */ PI extends string | false,
@@ -34,13 +35,15 @@ export class Instance<
 {
   readonly id?: string;
   readonly type: string;
-  readonly inputs: { [K in keyof I]: InputPort<I[K]> };
+  readonly inputs: { [K in keyof I]: InputPort<Exclude<I[K], undefined>> };
   readonly outputs: {
     [K in keyof O | "$error"]: K extends "$error"
       ? OutputPort<BreadboardError>
       : OutputPort<O[K]>;
   };
-  readonly primaryInput: PI extends keyof I ? InputPort<I[PI]> : undefined;
+  readonly primaryInput: PI extends keyof I
+    ? InputPort<Exclude<I[PI], undefined>>
+    : undefined;
   readonly primaryOutput: PO extends keyof O ? OutputPort<O[PO]> : undefined;
   // TODO(aomarks) Clean up output port getter
   readonly [OutputPortGetter]: PO extends keyof O
@@ -60,9 +63,10 @@ export class Instance<
     reflective: boolean,
     args: {
       [K: string]: JsonSerializable | OutputPortReference<JsonSerializable>;
-    } & { $id?: string }
+    } & { $id?: string },
+    kitBinding?: KitBinding
   ) {
-    this.type = type;
+    this.type = kitBinding?.id ?? type;
     this.#dynamicInputType = dynamicInputs?.type;
     this.#dynamicOutputType = dynamicOutputs?.type;
     this.#reflective = reflective;

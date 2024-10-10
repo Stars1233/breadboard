@@ -13,12 +13,12 @@ import worker from "./boards/worker.js";
 import human from "./boards/human.js";
 import repeater from "./boards/repeater.js";
 import structuredWorker from "./boards/structured-worker.js";
-import toolWorker from "./boards/tool-worker.js";
 import { writeFile } from "fs/promises";
 import specialist from "./boards/specialist.js";
 import looper from "./boards/looper.js";
 import joiner from "./boards/joiner.js";
 import { serialize } from "@breadboard-ai/build";
+import content from "./boards/content.js";
 
 const MANIFEST_NAME = "agent.kit.json";
 
@@ -33,14 +33,14 @@ const manifest: KitManifest = {
   version: "0.0.1",
   url: `https://raw.githubusercontent.com/breadboard-ai/breadboard/main/packages/agent-kit/${MANIFEST_NAME}`,
   nodes: {
-    human,
-    repeater,
-    structuredWorker,
-    specialist,
-    toolWorker,
-    worker,
-    looper,
+    human: serialize(human),
+    repeater: serialize(repeater),
+    structuredWorker: serialize(structuredWorker),
+    specialist: serialize(specialist),
+    worker: serialize(worker),
+    looper: serialize(looper),
     joiner: serialize(joiner),
+    content: serialize(content),
   },
 };
 

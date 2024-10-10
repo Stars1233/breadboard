@@ -13,10 +13,7 @@ import {
   InspectableNode,
   NodeHandlerMetadata,
 } from "@google-labs/breadboard";
-import {
-  CommentNode,
-  NodeMetadata,
-} from "@google-labs/breadboard-schema/graph.js";
+import { CommentNode, NodeMetadata } from "@breadboard-ai/types";
 import { classMap } from "lit/directives/class-map.js";
 
 const STORAGE_PREFIX = "bb-node-meta-details";
@@ -48,8 +45,11 @@ export class NodeMetaDetails extends LitElement {
   @property()
   subGraphId: string | null = null;
 
+  @property()
+  readOnly = false;
+
   @state()
-  expanded = false;
+  expanded = true;
 
   #ignoreNextUpdate = false;
   #titleRef: Ref<HTMLSpanElement> = createRef();
@@ -268,7 +268,7 @@ export class NodeMetaDetails extends LitElement {
       `${STORAGE_PREFIX}-expanded`
     );
 
-    this.expanded = isExpanded === "true";
+    this.expanded = isExpanded ? isExpanded === "true" : this.expanded;
   }
 
   protected shouldUpdate(): boolean {
@@ -288,6 +288,10 @@ export class NodeMetaDetails extends LitElement {
 
     if (!form.checkValidity()) {
       form.reportValidity();
+      return;
+    }
+
+    if (this.readOnly) {
       return;
     }
 
@@ -413,10 +417,16 @@ export class NodeMetaDetails extends LitElement {
                   type="text"
                   placeholder="Enter the title for this node"
                   .value=${data.metadata.title || ""}
+                  ?disabled=${this.readOnly}
                 />
 
                 <label>Log Level</label>
-                <select type="text" id="log-level" name="log-level">
+                <select
+                  type="text"
+                  id="log-level"
+                  name="log-level"
+                  ?disabled=${this.readOnly}
+                >
                   <option
                     value="debug"
                     ?selected=${data.metadata.logLevel === "debug"}
@@ -436,6 +446,7 @@ export class NodeMetaDetails extends LitElement {
                   name="description"
                   placeholder="Enter the description for this node"
                   .value=${data.metadata.description || ""}
+                  ?disabled=${this.readOnly}
                 ></textarea>
 
                 ${data.nodeTypeURL

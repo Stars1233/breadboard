@@ -1,5 +1,391 @@
 # @google-labs/breadboard-web
 
+## 1.21.0
+
+### Minor Changes
+
+- 9d31e85: Update edge rendering
+- 4857c1e: Lots of smaller board server fixes
+- 049a83b: Add FileSystemBoardServer
+
+### Patch Changes
+
+- 358d116: Add initial support for Board Server Kits
+- 0884913: Various QoL improvements
+- 84b824e: Merge contiguous user turns in Gemini text.
+- 8b14d0e: Add Examples Board Server
+- a53f7e7: Teach drag-dock-overlay about persistence
+- 3033a0d: Track the active tab
+- 54eb2f3: Improve remote provider load behavior
+- ffbcf09: Allow management of Board Servers
+- b5981d0: Set url for the component board.
+- c031dd6: Do some plumbing work for extensions
+- 1d6d7a3: Teach board activity to be dockable
+- Updated dependencies [b1dfa20]
+- Updated dependencies [9d31e85]
+- Updated dependencies [358d116]
+- Updated dependencies [be6656d]
+- Updated dependencies [5aded4a]
+- Updated dependencies [250dc44]
+- Updated dependencies [4630d8c]
+- Updated dependencies [0884913]
+- Updated dependencies [84b824e]
+- Updated dependencies [4857c1e]
+- Updated dependencies [e4a9453]
+- Updated dependencies [dd24baa]
+- Updated dependencies [8b14d0e]
+- Updated dependencies [3e04cb3]
+- Updated dependencies [a53f7e7]
+- Updated dependencies [71bd9a7]
+- Updated dependencies [683bab9]
+- Updated dependencies [4ec74a0]
+- Updated dependencies [b640cd2]
+- Updated dependencies [2db4eeb]
+- Updated dependencies [54eb2f3]
+- Updated dependencies [8e793ad]
+- Updated dependencies [acf554c]
+- Updated dependencies [fa87883]
+- Updated dependencies [ffbcf09]
+- Updated dependencies [7adeed8]
+- Updated dependencies [ca5f932]
+- Updated dependencies [b5981d0]
+- Updated dependencies [51c2c39]
+- Updated dependencies [413992d]
+- Updated dependencies [d447a7f]
+- Updated dependencies [049a83b]
+- Updated dependencies [c031dd6]
+- Updated dependencies [646504f]
+- Updated dependencies [1d6d7a3]
+  - @breadboard-ai/shared-ui@1.19.0
+  - @breadboard-ai/idb-board-server@1.18.0
+  - @google-labs/breadboard@0.28.0
+  - @google-labs/gemini-kit@0.8.3
+  - @breadboard-ai/board-server-management@1.18.0
+  - @breadboard-ai/example-boards@0.3.5
+  - @breadboard-ai/data-store@0.2.4
+  - @breadboard-ai/types@0.1.2
+  - @breadboard-ai/build@0.10.4
+  - @google-labs/core-kit@0.15.3
+  - @google-labs/agent-kit@0.12.4
+  - @breadboard-ai/board-server-utils@0.1.4
+  - @google-labs/json-kit@0.3.11
+  - @breadboard-ai/manifest@0.4.6
+  - @google-labs/node-nursery-web@1.3.3
+  - @google-labs/palm-kit@0.1.5
+  - @google-labs/template-kit@0.3.13
+  - @breadboard-ai/google-drive-kit@0.2.7
+  - @breadboard-ai/python-wasm@0.1.9
+
+## 1.20.2
+
+### Patch Changes
+
+- Updated dependencies [d20e867]
+  - @breadboard-ai/types@0.1.1
+  - @google-labs/breadboard@0.27.3
+  - @breadboard-ai/build@0.10.3
+  - @breadboard-ai/shared-ui@1.18.2
+  - @google-labs/agent-kit@0.12.3
+  - @breadboard-ai/board-server-management@1.17.2
+  - @breadboard-ai/board-server-utils@0.1.3
+  - @google-labs/core-kit@0.15.2
+  - @breadboard-ai/example-boards@0.3.4
+  - @google-labs/gemini-kit@0.8.2
+  - @breadboard-ai/google-drive-kit@0.2.6
+  - @breadboard-ai/idb-board-server@1.17.2
+  - @google-labs/json-kit@0.3.10
+  - @breadboard-ai/python-wasm@0.1.8
+  - @google-labs/template-kit@0.3.12
+
+## 1.20.1
+
+### Patch Changes
+
+- 6ab0acd: Introduce drag-dock-overlay
+- cae7e34: Strip function calls when response mime type is set to `application/json`.
+- 7921983: Introduce `@breadboard-ai/types` package.
+- Updated dependencies [6ab0acd]
+- Updated dependencies [370b7ca]
+- Updated dependencies [cae7e34]
+- Updated dependencies [7921983]
+- Updated dependencies [6b3ba07]
+- Updated dependencies [f89b60e]
+  - @breadboard-ai/shared-ui@1.18.1
+  - @google-labs/breadboard@0.27.2
+  - @google-labs/gemini-kit@0.8.1
+  - @breadboard-ai/types@0.1.0
+  - @breadboard-ai/manifest@0.4.5
+  - @breadboard-ai/build@0.10.2
+  - @breadboard-ai/example-boards@0.3.3
+  - @google-labs/agent-kit@0.12.2
+  - @breadboard-ai/board-server-management@1.17.1
+  - @breadboard-ai/board-server-utils@0.1.2
+  - @google-labs/core-kit@0.15.1
+  - @breadboard-ai/google-drive-kit@0.2.5
+  - @breadboard-ai/idb-board-server@1.17.1
+  - @google-labs/json-kit@0.3.9
+  - @breadboard-ai/python-wasm@0.1.7
+  - @google-labs/template-kit@0.3.11
+
+## 1.20.0
+
+### Minor Changes
+
+- 2781bae: Offer super-nice board server first-run experience.
+- 1799348: Introduce Streamlined Schema Editor
+
+### Patch Changes
+
+- 4667d78: Add "delete property" button
+- 33f5f83: Update node selector
+- 1e7fafd: Various bug fixes
+- b5cada9: Introduce ribbon menu
+- Updated dependencies [3fcecff]
+- Updated dependencies [418c586]
+- Updated dependencies [564850b]
+- Updated dependencies [a2503de]
+- Updated dependencies [2781bae]
+- Updated dependencies [690ebe6]
+- Updated dependencies [1799348]
+- Updated dependencies [5c015f2]
+- Updated dependencies [4667d78]
+- Updated dependencies [33f5f83]
+- Updated dependencies [1e7fafd]
+- Updated dependencies [b5cada9]
+- Updated dependencies [e3a469e]
+  - @breadboard-ai/shared-ui@1.18.0
+  - @breadboard-ai/build@0.10.1
+  - @google-labs/breadboard@0.27.1
+  - @google-labs/agent-kit@0.12.1
+
+## 1.19.0
+
+### Minor Changes
+
+- ab92d99: Plumb edge value data to the GraphRenderer.
+- 508c4b3: Plumb through edge highlighting and inner activity.
+- 033d656: Teach VE to autosave boards
+- 12cdec3: Improve tab handling
+- 9a9f5c2: Move activity to overlay
+- 65c0449: Teach TopGraphObserver about various activity types, especially errors.
+- 9c878e2: Start work on a runtime API
+- 2f68f71: Move node meta into configurator
+- 8540b93: Convert Content to Build API and merge Specialist 2 to Specialist.
+- 81eafad: Implement selecting runs and viewing them.
+- 4c03455: Introduce Specialist 2 and make Content component support LLM Content.
+- d0f99b4: Restyle graph nodes
+- 392d7cd: Switch global configurator for per-port
+- 9fe7d4f: Add multi-tab support
+- 8c73da3: Integrate TopGraphObserver into Visual Editor.
+- 8572be4: Update UI ready for Runs
+- df9b158: Add indicators on edges; use activity log lite
+- 955ace6: Introduce Project Store behind a flag
+- a049abf: Move more things into runtime
+- ec55e54: Automatically pan/zoom to currently running node
+- d7606d3: Implement plumbing for visualizing runs as graphs.
+- d9fd0ab: [project-store] -> [idb-board-server]
+- a6128a3: Switch Visual Editor to use Run API.
+- 0088ede: Allow configuring all ports (except start/control) in advanced expansion state.
+- 60349b8: Add board server management and remote board server packages
+- 94759f7: Teach Specialist about routing.
+- d0e894d: Add Edge Value overlay
+
+### Patch Changes
+
+- 703f17d: Various fixes to make board server work again.
+- 4e620ed: Remove the extra requestUpdate that triggered the loop of doom.
+- bc967e3: Re-render and emit input event when adding parts in llm-input.
+- a74db56: Teach editor about tab URLs
+- 981bd9e: Align IDB with Board Servers in nav
+- 5bf9e8d: More tab improvements
+- fd69479: Recover from bad node types
+- 24dd1d1: Various fixes around the new runtime.
+- f10e709: Update build deps.
+- 1f11bf3: Switch follow to using Local Storage
+- 4e00d85: Update URL whenever a tab closes
+- 9797718: Auto-migrate IDB `GraphProvider` boards
+- 4f4f3ee: Include all ports in configurator
+- d22e974: Catch up all the BGL files after changes in Build API.
+- 9254424: Add setting for autosave
+- 3e68ec2: Save pending configuration with board
+- 08d24da: Improve canSave check
+- 5990fd0: Add message for secrets and API keys
+- a039d2e: Do a little tidy up of the UI
+- b6eeb3e: Show Activity Marker on graph nodes
+- e63b5dd: Polish Specialist and Content.
+- d99292e: Restore board URL copy
+- e723c09: Couple of minor tweaks
+- 9783ba8: Fix worker memory leak and throttle describers.
+- edefaf9: Add tooltip support
+- eb83b66: Fix load run behavior
+- 7fdf9c2: Add "gemini-1.5-pro-exp-0827" to the choices in Gemini-calling components.
+- cc72dcc: Set runs to be read-only
+- 320c4c0: Rename some runtime types & events
+- 1ad3001: Show configuration previews underneath ports
+- 7c2bf58: Update example graph layouts
+- 100fc95: Various fixes and polish.
+- 08ae0f6: Create and use hashes for descriptor-based tabs
+- 1956396: Autosave board when top-level info changes
+- 77d9497: Restore Activity Log
+- 356897c: Teach Visual debugger to spelunk deeper than 2 levels.
+- cac51cb: Teach runtime about tab types
+- 84ca649: Introduce the "Content" component.
+- e026112: Remind Specialist that it doesn't accept dynamic wires.
+- 40988de: Teach SecretsHelper about the timing of secrets-related events.
+- Updated dependencies [49e2740]
+- Updated dependencies [ab92d99]
+- Updated dependencies [323216f]
+- Updated dependencies [7fd41bb]
+- Updated dependencies [2726cb8]
+- Updated dependencies [fe61245]
+- Updated dependencies [54c8197]
+- Updated dependencies [f94f498]
+- Updated dependencies [703f17d]
+- Updated dependencies [3d4ca21]
+- Updated dependencies [bc967e3]
+- Updated dependencies [e6e165d]
+- Updated dependencies [6136d87]
+- Updated dependencies [0273985]
+- Updated dependencies [f5d3111]
+- Updated dependencies [cb8c99a]
+- Updated dependencies [2f1b85c]
+- Updated dependencies [4dadf16]
+- Updated dependencies [c145fdd]
+- Updated dependencies [981bd9e]
+- Updated dependencies [226be62]
+- Updated dependencies [5bf9e8d]
+- Updated dependencies [e543b2e]
+- Updated dependencies [8f9fddf]
+- Updated dependencies [7929eee]
+- Updated dependencies [2fa05f0]
+- Updated dependencies [4e0a4f6]
+- Updated dependencies [fd69479]
+- Updated dependencies [508c4b3]
+- Updated dependencies [033d656]
+- Updated dependencies [f61ccf3]
+- Updated dependencies [e61fa66]
+- Updated dependencies [f71bcfb]
+- Updated dependencies [a104fa7]
+- Updated dependencies [12cdec3]
+- Updated dependencies [b8547b8]
+- Updated dependencies [9a9f5c2]
+- Updated dependencies [65c0449]
+- Updated dependencies [f0b5ccc]
+- Updated dependencies [8a1b8c4]
+- Updated dependencies [3188607]
+- Updated dependencies [1f11bf3]
+- Updated dependencies [77fab49]
+- Updated dependencies [4e00d85]
+- Updated dependencies [58d2e8c]
+- Updated dependencies [2ccac87]
+- Updated dependencies [9797718]
+- Updated dependencies [8efca60]
+- Updated dependencies [679719b]
+- Updated dependencies [2ebed5f]
+- Updated dependencies [4f4f3ee]
+- Updated dependencies [88298d5]
+- Updated dependencies [9c878e2]
+- Updated dependencies [2f68f71]
+- Updated dependencies [b673bfa]
+- Updated dependencies [b84b71b]
+- Updated dependencies [8540b93]
+- Updated dependencies [9254424]
+- Updated dependencies [81eafad]
+- Updated dependencies [4c03455]
+- Updated dependencies [3e68ec2]
+- Updated dependencies [3137076]
+- Updated dependencies [157c31e]
+- Updated dependencies [feeed7a]
+- Updated dependencies [4cc71ee]
+- Updated dependencies [8330f0c]
+- Updated dependencies [5990fd0]
+- Updated dependencies [d0f99b4]
+- Updated dependencies [9b62fc2]
+- Updated dependencies [a039d2e]
+- Updated dependencies [b6eeb3e]
+- Updated dependencies [ee56556]
+- Updated dependencies [e63b5dd]
+- Updated dependencies [0b78f92]
+- Updated dependencies [1423647]
+- Updated dependencies [cbc418b]
+- Updated dependencies [392d7cd]
+- Updated dependencies [74d50d4]
+- Updated dependencies [e723c09]
+- Updated dependencies [9783ba8]
+- Updated dependencies [edefaf9]
+- Updated dependencies [3e5f3dc]
+- Updated dependencies [77dd2a4]
+- Updated dependencies [9fe7d4f]
+- Updated dependencies [409a07e]
+- Updated dependencies [8c73da3]
+- Updated dependencies [8572be4]
+- Updated dependencies [df9b158]
+- Updated dependencies [502e6d5]
+- Updated dependencies [c36391c]
+- Updated dependencies [6cdf20c]
+- Updated dependencies [f63a497]
+- Updated dependencies [9ce8ad3]
+- Updated dependencies [7fdf9c2]
+- Updated dependencies [aafec7f]
+- Updated dependencies [0ab2355]
+- Updated dependencies [f0ce284]
+- Updated dependencies [cc72dcc]
+- Updated dependencies [890b8a2]
+- Updated dependencies [1ad3001]
+- Updated dependencies [93a1d7c]
+- Updated dependencies [91fe8bb]
+- Updated dependencies [e38bf19]
+- Updated dependencies [100fc95]
+- Updated dependencies [4423c35]
+- Updated dependencies [cab83ce]
+- Updated dependencies [e19f046]
+- Updated dependencies [78d6394]
+- Updated dependencies [28e0262]
+- Updated dependencies [863c3e8]
+- Updated dependencies [a049abf]
+- Updated dependencies [ec55e54]
+- Updated dependencies [5834c81]
+- Updated dependencies [d7606d3]
+- Updated dependencies [77d9497]
+- Updated dependencies [09b1a4e]
+- Updated dependencies [3abc5f6]
+- Updated dependencies [cac51cb]
+- Updated dependencies [0ef793f]
+- Updated dependencies [84ca649]
+- Updated dependencies [679119f]
+- Updated dependencies [d9fd0ab]
+- Updated dependencies [a6128a3]
+- Updated dependencies [9c04caa]
+- Updated dependencies [852160e]
+- Updated dependencies [e026112]
+- Updated dependencies [0088ede]
+- Updated dependencies [71b8727]
+- Updated dependencies [60349b8]
+- Updated dependencies [94759f7]
+- Updated dependencies [281ab28]
+- Updated dependencies [e74ee2f]
+- Updated dependencies [40988de]
+- Updated dependencies [d0e894d]
+- Updated dependencies [5fc6e8b]
+  - @breadboard-ai/build@0.10.0
+  - @breadboard-ai/shared-ui@1.17.0
+  - @google-labs/gemini-kit@0.8.0
+  - @breadboard-ai/google-drive-kit@0.2.4
+  - @breadboard-ai/python-wasm@0.1.6
+  - @google-labs/core-kit@0.15.0
+  - @google-labs/json-kit@0.3.8
+  - @google-labs/agent-kit@0.12.0
+  - @google-labs/breadboard@0.27.0
+  - @breadboard-ai/idb-board-server@1.17.0
+  - @breadboard-ai/board-server-management@1.17.0
+  - @breadboard-ai/board-server-utils@0.1.1
+  - @breadboard-ai/example-boards@0.3.2
+  - @google-labs/template-kit@0.3.10
+  - @google-labs/node-nursery-web@1.3.2
+  - @breadboard-ai/data-store@0.2.3
+  - @breadboard-ai/manifest@0.4.4
+  - @google-labs/palm-kit@0.1.4
+
 ## 1.18.0
 
 ### Minor Changes

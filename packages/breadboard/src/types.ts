@@ -8,6 +8,7 @@ import type {
   Capability,
   Edge,
   GraphDescriptor,
+  InlineDataCapabilityPart,
   InputValues,
   KitDescriptor,
   NodeDescriptor,
@@ -16,13 +17,10 @@ import type {
   NodeValue,
   OutputValues,
   StartLabel,
-} from "@google-labs/breadboard-schema/graph.js";
-import { GraphLoader } from "./loader/types.js";
-import {
-  DataStore,
-  InlineDataCapabilityPart,
   StoredDataCapabilityPart,
-} from "./data/types.js";
+} from "@breadboard-ai/types";
+import { GraphLoader } from "./loader/types.js";
+import { DataStore } from "./data/types.js";
 import { ManagedRunState, RunState } from "./run/types.js";
 
 export type {
@@ -45,7 +43,7 @@ export type {
   OutputIdentifier,
   OutputValues,
   SubGraphs,
-} from "@google-labs/breadboard-schema/graph.js";
+} from "@breadboard-ai/types";
 
 export type BehaviorSchema =
   /**
@@ -313,6 +311,10 @@ export type NodeHandlerMetadata = {
    * Whether or not the node is deprecated.
    */
   deprecated?: boolean;
+  /*
+   * The tags associated with the node.
+   */
+  tags?: string[];
   /**
    * The documentation for the graph, expressed as a URL and optional description.
    */
@@ -470,6 +472,7 @@ export type GraphStartProbeData = {
   graph: GraphDescriptor;
   path: number[];
   timestamp: number;
+  edges?: EdgeResponse[];
 };
 
 export type GraphStartProbeMessage = {

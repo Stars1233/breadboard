@@ -4,51 +4,62 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { LitElement, html, css, nothing } from "lit";
-import { customElement, property, state } from "lit/decorators.js";
 import {
-  GraphDescriptor,
-  NodeConfiguration,
-  InspectableNodePorts,
-  SubGraphs,
-  NodeDescriptor,
-  NodeValue,
+  CommentNode,
   Edge,
   EditSpec,
-  CommentNode,
+  GraphDescriptor,
+  GraphProviderCapabilities,
+  GraphProviderExtendedCapabilities,
   InspectableGraph,
+  InspectableNodePorts,
+  InspectableRun,
+  NodeConfiguration,
+  NodeDescriptor,
   NodeHandlerMetadata,
+  NodeValue,
 } from "@google-labs/breadboard";
+import { LitElement, PropertyValues, css, html, nothing } from "lit";
+import { customElement, property, state } from "lit/decorators.js";
+import { Ref, createRef } from "lit/directives/ref.js";
+import { until } from "lit/directives/until.js";
 import {
+  CommentEditRequestEvent,
   EdgeChangeEvent,
-  GraphInitialDrawEvent,
-  GraphNodeDeleteEvent,
+  EdgeValueSelectedEvent,
+  GraphCommentEditRequestEvent,
   GraphEdgeAttachEvent,
-  GraphNodeEdgeChangeEvent,
   GraphEdgeDetachEvent,
+  GraphEdgeValueSelectedEvent,
+  GraphEntityRemoveEvent,
+  GraphHideTooltipEvent,
+  GraphInitialDrawEvent,
+  GraphInteractionEvent,
+  GraphNodeActivitySelectedEvent,
+  GraphNodeDeleteEvent,
+  GraphNodeEdgeChangeEvent,
+  GraphNodeEditEvent,
   GraphNodesVisualUpdateEvent,
-  KitNodeChosenEvent,
+  GraphShowTooltipEvent,
+  HideTooltipEvent,
   MultiEditEvent,
+  NodeActivitySelectedEvent,
+  NodeConfigurationUpdateRequestEvent,
   NodeCreateEvent,
   NodeDeleteEvent,
-  SubGraphChosenEvent,
+  NodeTypeRetrievalErrorEvent,
+  ShowTooltipEvent,
   SubGraphCreateEvent,
-  SubGraphDeleteEvent,
-  GraphEntityRemoveEvent,
 } from "../../events/events.js";
-import { GraphRenderer } from "./graph-renderer.js";
-import { Ref, createRef, ref } from "lit/directives/ref.js";
-import { map } from "lit/directives/map.js";
-import { MAIN_BOARD_ID } from "../../constants/constants.js";
-import { EditorMode, filterPortsByMode } from "../../utils/mode.js";
-import type { NodeSelector } from "./node-selector.js";
 import { GraphEdge } from "./graph-edge.js";
-import { edgeToString } from "./utils.js";
-import { until } from "lit/directives/until.js";
+import { GraphRenderer } from "./graph-renderer.js";
+import { createRandomID, edgeToString } from "./utils.js";
 
+const ZOOM_KEY = "bb-editor-zoom-to-highlighted-node-during-runs";
 const DATA_TYPE = "text/plain";
 const PASTE_OFFSET = 50;
 
+import { TopGraphRunResult } from "../../types/types.js";
 import { GraphAssets } from "./graph-assets.js";
 
 function getDefaultConfiguration(type: string): NodeConfiguration | undefined {
@@ -59,13 +70,18 @@ function getDefaultConfiguration(type: string): NodeConfiguration | undefined {
   return {
     schema: {
       properties: {
-        content: {
-          type: "object",
-          title: "Content",
-          examples: [],
-          behavior: ["llm-content"],
-          default:
-            type === "input" ? '{"role":"user","parts":[{"text":""}]}' : "null",
+        context: {
+          type: "array",
+          title: "Context",
+          items: {
+            type: "object",
+            examples: [],
+            behavior: ["llm-content"],
+            default:
+              type === "input"
+                ? '{"role":"user","parts":[{"text":""}]}'
+                : "null",
+          },
         },
       },
       type: "object",
@@ -88,7 +104,22 @@ export class Editor extends LitElement {
   subGraphId: string | null = null;
 
   @property()
+  run: InspectableRun | null = null;
+
+  @property()
   boardId: number = -1;
+
+  @property()
+  capabilities: false | GraphProviderCapabilities = false;
+
+  @property()
+  extendedCapabilities: false | GraphProviderExtendedCapabilities = false;
+
+  @property()
+  canUndo = false;
+
+  @property()
+  canRedo = false;
 
   @property()
   collapseNodesByDefault = false;
@@ -100,10 +131,7 @@ export class Editor extends LitElement {
   showNodeShortcuts = true;
 
   @property()
-  mode = EditorMode.ADVANCED;
-
-  @property()
-  highlightedNodeId: string | null = null;
+  topGraphResult: TopGraphRunResult | null = null;
 
   @state()
   nodeValueBeingEdited: EditedNode | null = null;
@@ -118,6 +146,9 @@ export class Editor extends LitElement {
   showNodeTypeDescriptions = true;
 
   @property()
+  showNodePreviewValues = true;
+
+  @property()
   assetPrefix = "";
 
   @property()
@@ -127,10 +158,19 @@ export class Editor extends LitElement {
   readOnly = false;
 
   @property()
+  showReadOnlyOverlay = false;
+
+  @property()
   highlightInvalidWires = false;
 
   @property()
   showExperimentalComponents = false;
+
+  @property()
+  zoomToHighlightedNodeDuringRuns = false;
+
+  @property()
+  tabURLs: string[] = [];
 
   @property()
   set showPortTooltips(value: boolean) {
@@ -141,12 +181,19 @@ export class Editor extends LitElement {
     return this.#graphRenderer.showPortTooltips;
   }
 
+  @property()
+  isShowingBoardActivityOverlay = false;
+
+  @state()
+  showOverflowMenu = false;
+
   #graphRenderer = new GraphRenderer();
   // Incremented each time a graph is updated, used to avoid extra work
   // inspecting ports when the graph is updated.
   #graphVersion = 0;
   #lastBoardId: number = -1;
   #lastSubGraphId: string | null = null;
+
   #onKeyDownBound = this.#onKeyDown.bind(this);
   #onDropBound = this.#onDrop.bind(this);
   #onDragOverBound = this.#onDragOver.bind(this);
@@ -159,10 +206,18 @@ export class Editor extends LitElement {
   #onGraphEdgeChangeBound = this.#onGraphEdgeChange.bind(this);
   #onGraphNodeDeleteBound = this.#onGraphNodeDelete.bind(this);
   #onGraphEntityRemoveBound = this.#onGraphEntityRemove.bind(this);
+  #onGraphNodeEditBound = this.#onGraphNodeEdit.bind(this);
+  #onGraphEdgeValueSelectedBound = this.#onGraphEdgeValueSelected.bind(this);
+  #onGraphNodeActivitySelectedBound =
+    this.#onGraphNodeActivitySelected.bind(this);
+  #onGraphInteractionBound = this.#onGraphInteraction.bind(this);
+  #onGraphShowTooltipBound = this.#onGraphShowTooltip.bind(this);
+  #onGraphHideTooltipBound = this.#onGraphHideTooltip.bind(this);
+  #onGraphCommentEditRequestBound = this.#onGraphCommentEditRequest.bind(this);
+
   #top = 0;
   #left = 0;
   #addButtonRef: Ref<HTMLInputElement> = createRef();
-  #nodeSelectorRef: Ref<NodeSelector> = createRef();
 
   #writingToClipboard = false;
   #readingFromClipboard = false;
@@ -189,96 +244,40 @@ export class Editor extends LitElement {
       position: relative;
     }
 
-    bb-node-selector {
-      visibility: hidden;
-      pointer-events: none;
-      position: absolute;
-      bottom: 52px;
-      left: 0;
-    }
-
-    #nodes {
-      height: calc(var(--bb-grid-size) * 9);
-      position: absolute;
-      bottom: calc(var(--bb-grid-size) * 3);
-      left: calc(var(--bb-grid-size) * 3);
-      border-radius: 50px;
-      border: 1px solid #d9d9d9;
-      background: #ffffff;
+    #readonly-overlay {
       display: flex;
       align-items: center;
-      justify-content: center;
-      padding: calc(var(--bb-grid-size) * 2) calc(var(--bb-grid-size) * 3);
+      height: var(--bb-grid-size-9);
+      position: absolute;
+      top: 52px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: var(--bb-boards-900);
+      font: 400 var(--bb-body-small) / var(--bb-body-line-height-small)
+        var(--bb-font-family);
+      background: var(--bb-boards-300);
+      border-radius: var(--bb-grid-size-10);
+      padding: 0 var(--bb-grid-size-4) 0 var(--bb-grid-size-3);
     }
 
-    #shortcut-add-comment,
-    #shortcut-add-specialist,
-    #shortcut-add-human,
-    #shortcut-add-looper {
-      font-size: 0;
+    #readonly-overlay::before {
+      content: "";
       width: 20px;
       height: 20px;
-      background: var(--bb-neutral-0);
-      margin-right: calc(var(--bb-grid-size) * 2);
-      border: none;
-      cursor: grab;
-    }
-
-    #shortcut-add-specialist {
-      background: var(--bb-neutral-0) var(--bb-icon-smart-toy) center center /
-        20px 20px no-repeat;
-    }
-
-    #shortcut-add-human {
-      background: var(--bb-neutral-0) var(--bb-icon-human) center center / 20px
-        20px no-repeat;
-    }
-
-    #shortcut-add-looper {
-      background: var(--bb-neutral-0) var(--bb-icon-laps) center center / 20px
-        20px no-repeat;
-    }
-
-    #shortcut-add-comment {
-      background: var(--bb-neutral-0) var(--bb-icon-edit) center center / 20px
-        20px no-repeat;
-    }
-
-    #shortcut-add-specialist:active,
-    #shortcut-add-human:active,
-    #shortcut-add-looper:active {
-      cursor: grabbing;
-    }
-
-    label[for="add-node"] {
-      font: 500 var(--bb-label-large) / var(--bb-label-line-height-large)
-        var(--bb-font-family);
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      background: var(--bb-icon-saved-readonly) center center / 20px 20px
+        no-repeat;
       margin-right: var(--bb-grid-size);
+      mix-blend-mode: difference;
     }
 
-    label[for="add-node"]::before {
-      content: "";
-      width: 16px;
-      height: 16px;
-      background: var(--bb-icon-add) center center / 16px 16px no-repeat;
-      margin-right: calc(var(--bb-grid-size) * 2);
-    }
-
-    #add-node {
-      display: none;
-    }
-
-    #add-node:checked ~ bb-node-selector {
-      visibility: visible;
-      pointer-events: auto;
-    }
-
-    #add-node:checked ~ label[for="add-node"] {
-      opacity: 1;
+    bb-ribbon-menu {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 44px;
+      flex: 0 0 auto;
+      z-index: 1;
     }
 
     bb-graph-renderer {
@@ -288,105 +287,12 @@ export class Editor extends LitElement {
       outline: none;
       overflow: hidden;
     }
-
-    #controls {
-      height: calc(var(--bb-grid-size) * 9);
-      position: absolute;
-      left: calc(var(--bb-grid-size) * 3);
-      top: calc(var(--bb-grid-size) * 3);
-      background: #fff;
-      border-radius: 40px;
-      padding: calc(var(--bb-grid-size) * 2) calc(var(--bb-grid-size) * 3);
-      border: 1px solid var(--bb-neutral-300);
-      display: flex;
-      align-items: center;
-    }
-
-    #controls button {
-      margin-left: calc(var(--bb-grid-size) * 2);
-    }
-
-    #controls button:first-of-type {
-      margin-left: 0;
-    }
-
-    #reset-layout,
-    #zoom-to-fit {
-      width: 20px;
-      height: 20px;
-      cursor: pointer;
-      background: center center no-repeat;
-      background-size: 20px 20px;
-      font-size: 0;
-      cursor: pointer;
-      transition: opacity 0.3s cubic-bezier(0, 0, 0.3, 1);
-      opacity: 0.5;
-      border: none;
-    }
-
-    #reset-layout {
-      background-image: var(--bb-icon-reset-nodes);
-    }
-
-    #zoom-to-fit {
-      background-image: var(--bb-icon-fit);
-    }
-
-    #reset-layout:hover,
-    #zoom-to-fit:hover {
-      transition-duration: 0.1s;
-      opacity: 1;
-    }
-
-    .divider {
-      width: 1px;
-      height: calc(var(--bb-grid-size) * 5);
-      background: var(--bb-neutral-300);
-      margin: 0px calc(var(--bb-grid-size) * 3);
-    }
-
-    #subgraph-selector {
-      color: var(--bb-ui-500);
-      border: none;
-      font-size: var(--bb-label-large);
-    }
-
-    #add-sub-board,
-    #delete-sub-board {
-      background: none;
-      width: 16px;
-      height: 16px;
-      background-position: center center;
-      background-repeat: no-repeat;
-      background-size: 16px 16px;
-      border: none;
-      font-size: 0;
-      opacity: 0.5;
-      cursor: pointer;
-    }
-
-    #add-sub-board {
-      background-image: var(--bb-icon-add-circle);
-    }
-
-    #delete-sub-board {
-      background-image: var(--bb-icon-delete);
-    }
-
-    #add-sub-board:hover,
-    #delete-sub-board:hover {
-      opacity: 1;
-    }
-
-    #delete-sub-board[disabled] {
-      opacity: 0.3;
-      cursor: auto;
-    }
   `;
 
   async #processGraph(): Promise<GraphRenderer> {
     if (GraphAssets.assetPrefix !== this.assetPrefix) {
       GraphAssets.instance().loadAssets(this.assetPrefix);
+      await GraphAssets.instance().loaded;
     }
 
     await this.#graphRenderer.ready;
@@ -411,35 +317,44 @@ export class Editor extends LitElement {
     }
 
     // Force a reset when the board changes.
-    if (this.boardId !== this.#lastBoardId) {
-      this.#graphRenderer.removeAllGraphs();
-      this.#lastBoardId = this.boardId;
-    }
+    const mainGraphUrl = this.graph.raw().url ?? "";
+    const url = this.subGraphId
+      ? `${mainGraphUrl}#${this.subGraphId}`
+      : mainGraphUrl;
 
     const ports = new Map<string, InspectableNodePorts>();
     const typeMetadata = new Map<string, NodeHandlerMetadata>();
     const graphVersion = this.#graphVersion;
+
     for (const node of selectedGraph.nodes()) {
-      ports.set(
-        node.descriptor.id,
-        filterPortsByMode(await node.ports(), this.mode)
-      );
-      typeMetadata.set(node.descriptor.type, await node.type().metadata());
+      ports.set(node.descriptor.id, await node.ports());
+      try {
+        typeMetadata.set(node.descriptor.type, await node.type().metadata());
+      } catch (err) {
+        // In the event of failing to get the type info, suggest removing the
+        // node from the graph.
+        this.dispatchEvent(
+          new NodeTypeRetrievalErrorEvent(node.descriptor.id, this.subGraphId)
+        );
+      }
+
       if (this.#graphVersion !== graphVersion) {
         // Another update has come in, bail out.
         return this.#graphRenderer;
       }
     }
 
-    if (!this.graph) {
+    if (!selectedGraph) {
       return this.#graphRenderer;
     }
 
-    const url = this.graph.raw().url || "";
+    this.#graphRenderer.hideAllGraphs();
+    this.#graphRenderer.removeGraphs(this.tabURLs);
 
     // Attempt to update the graph if it already exists.
     const updated = this.#graphRenderer.updateGraphByUrl(url, this.subGraphId, {
       showNodeTypeDescriptions: this.showNodeTypeDescriptions,
+      showNodePreviewValues: this.showNodePreviewValues,
       collapseNodesByDefault: this.collapseNodesByDefault,
       ports: ports,
       typeMetadata,
@@ -449,23 +364,24 @@ export class Editor extends LitElement {
     });
 
     if (updated) {
+      this.#graphRenderer.showGraph(url, this.subGraphId);
+      if (this.topGraphResult) {
+        this.#graphRenderer.topGraphResult = this.topGraphResult;
+      }
+
       return this.#graphRenderer;
     }
 
-    this.#graphRenderer.hideAllGraphs();
     if (this.#lastSubGraphId !== this.subGraphId) {
       // TODO: Need to figure out how to encode the subgraph/node id combo.
-      this.#graphRenderer.highlightedNodeId = null;
-    }
-
-    for (const graph of this.#graphRenderer.getGraphs()) {
-      this.#graphRenderer.removeGraph(graph);
+      this.#graphRenderer.topGraphResult = null;
     }
 
     this.#graphRenderer.createGraph({
       url,
       subGraphId: this.subGraphId,
       showNodeTypeDescriptions: this.showNodeTypeDescriptions,
+      showNodePreviewValues: this.showNodePreviewValues,
       collapseNodesByDefault: this.collapseNodesByDefault,
       ports: ports,
       typeMetadata,
@@ -478,9 +394,18 @@ export class Editor extends LitElement {
     this.#graphRenderer.addEventListener(
       GraphInitialDrawEvent.eventName,
       () => {
-        this.#ignoreNextUpdate = true;
-        this.#graphRenderer.showAllGraphs();
-        this.#graphRenderer.zoomToFit();
+        this.#graphRenderer.showGraph(url, this.subGraphId);
+        this.#graphRenderer.zoomToFit(
+          true,
+          this.isShowingBoardActivityOverlay ? 400 : 0
+        );
+
+        // When we're loading a graph from existing results, we need to
+        // set the topGraphResult again so that it is applied to the newly
+        // created graph.
+        if (this.topGraphResult) {
+          this.#graphRenderer.topGraphResult = this.topGraphResult;
+        }
       },
       { once: true }
     );
@@ -488,14 +413,11 @@ export class Editor extends LitElement {
     return this.#graphRenderer;
   }
 
-  #ignoreNextUpdate = false;
-  protected shouldUpdate(): boolean {
-    if (this.#ignoreNextUpdate) {
-      this.#ignoreNextUpdate = false;
-      return false;
-    }
+  constructor() {
+    super();
 
-    return true;
+    this.zoomToHighlightedNodeDuringRuns =
+      (globalThis.localStorage.getItem(ZOOM_KEY) ?? "true") === "true";
   }
 
   connectedCallback(): void {
@@ -529,6 +451,41 @@ export class Editor extends LitElement {
     this.#graphRenderer.addEventListener(
       GraphEntityRemoveEvent.eventName,
       this.#onGraphEntityRemoveBound
+    );
+
+    this.#graphRenderer.addEventListener(
+      GraphNodeEditEvent.eventName,
+      this.#onGraphNodeEditBound
+    );
+
+    this.#graphRenderer.addEventListener(
+      GraphEdgeValueSelectedEvent.eventName,
+      this.#onGraphEdgeValueSelectedBound
+    );
+
+    this.#graphRenderer.addEventListener(
+      GraphNodeActivitySelectedEvent.eventName,
+      this.#onGraphNodeActivitySelectedBound
+    );
+
+    this.#graphRenderer.addEventListener(
+      GraphInteractionEvent.eventName,
+      this.#onGraphInteractionBound
+    );
+
+    this.#graphRenderer.addEventListener(
+      GraphShowTooltipEvent.eventName,
+      this.#onGraphShowTooltipBound
+    );
+
+    this.#graphRenderer.addEventListener(
+      GraphHideTooltipEvent.eventName,
+      this.#onGraphHideTooltipBound
+    );
+
+    this.#graphRenderer.addEventListener(
+      GraphCommentEditRequestEvent.eventName,
+      this.#onGraphCommentEditRequestBound
     );
 
     window.addEventListener("resize", this.#onResizeBound);
@@ -572,12 +529,88 @@ export class Editor extends LitElement {
       this.#onGraphEntityRemoveBound
     );
 
+    this.#graphRenderer.removeEventListener(
+      GraphNodeEditEvent.eventName,
+      this.#onGraphNodeEditBound
+    );
+
+    this.#graphRenderer.removeEventListener(
+      GraphEdgeValueSelectedEvent.eventName,
+      this.#onGraphEdgeValueSelectedBound
+    );
+
+    this.#graphRenderer.removeEventListener(
+      GraphNodeActivitySelectedEvent.eventName,
+      this.#onGraphNodeActivitySelectedBound
+    );
+
+    this.#graphRenderer.removeEventListener(
+      GraphInteractionEvent.eventName,
+      this.#onGraphInteractionBound
+    );
+
+    this.#graphRenderer.removeEventListener(
+      GraphShowTooltipEvent.eventName,
+      this.#onGraphShowTooltipBound
+    );
+
+    this.#graphRenderer.removeEventListener(
+      GraphHideTooltipEvent.eventName,
+      this.#onGraphHideTooltipBound
+    );
+
+    this.#graphRenderer.removeEventListener(
+      GraphCommentEditRequestEvent.eventName,
+      this.#onGraphCommentEditRequestBound
+    );
+
     window.removeEventListener("resize", this.#onResizeBound);
     this.removeEventListener("keydown", this.#onKeyDownBound);
     this.removeEventListener("pointermove", this.#onPointerMoveBound);
     this.removeEventListener("pointerdown", this.#onPointerDownBound);
     this.removeEventListener("dragover", this.#onDragOverBound);
     this.removeEventListener("drop", this.#onDropBound);
+  }
+
+  protected willUpdate(changedProperties: PropertyValues): void {
+    if (!changedProperties.has("run")) {
+      return;
+    }
+
+    this.#graphRenderer.zoomToHighlightedNode =
+      this.zoomToHighlightedNodeDuringRuns;
+  }
+
+  #onGraphInteraction() {
+    // Only switch off the flag if there is a run active.
+    if (!this.topGraphResult?.currentNode) {
+      return;
+    }
+
+    this.zoomToHighlightedNodeDuringRuns = false;
+  }
+
+  #onGraphShowTooltip(evt: Event) {
+    const tooltipEvt = evt as GraphShowTooltipEvent;
+    this.dispatchEvent(
+      new ShowTooltipEvent(tooltipEvt.message, tooltipEvt.x, tooltipEvt.y)
+    );
+  }
+
+  #onGraphHideTooltip() {
+    this.dispatchEvent(new HideTooltipEvent());
+  }
+
+  #onGraphCommentEditRequest(evt: Event) {
+    const commentEvt = evt as GraphCommentEditRequestEvent;
+    this.dispatchEvent(
+      new CommentEditRequestEvent(
+        commentEvt.id,
+        commentEvt.x,
+        commentEvt.y,
+        this.subGraphId
+      )
+    );
   }
 
   #onPointerMove(evt: PointerEvent) {
@@ -604,6 +637,10 @@ export class Editor extends LitElement {
   }
 
   async #onKeyDown(evt: KeyboardEvent) {
+    if (this.readOnly) {
+      return;
+    }
+
     const isMac = navigator.platform.indexOf("Mac") === 0;
     const isCtrlCommand = isMac ? evt.metaKey : evt.ctrlKey;
 
@@ -700,7 +737,7 @@ export class Editor extends LitElement {
               edges: [],
               nodes: [
                 {
-                  id: this.#createRandomID("board"),
+                  id: createRandomID(data),
                   type: data,
                 },
               ],
@@ -784,7 +821,7 @@ export class Editor extends LitElement {
               (graphNode) => graphNode.id === node.id
             );
             if (existingNode) {
-              node.id = this.#createRandomID(node.type);
+              node.id = createRandomID(node.type);
               remappedNodeIds.set(existingNode.id, node.id);
             }
 
@@ -817,7 +854,7 @@ export class Editor extends LitElement {
               node.id,
               "node",
               position,
-              this.collapseNodesByDefault,
+              this.collapseNodesByDefault ? "collapsed" : "expanded",
               false
             );
             this.#graphRenderer.addToAutoSelect(node.id);
@@ -841,12 +878,16 @@ export class Editor extends LitElement {
               continue;
             }
 
-            const newEdge = {
+            const newEdge: Edge = {
               from: remappedNodeIds.get(edge.from) ?? edge.from,
               to: remappedNodeIds.get(edge.to) ?? edge.to,
               in: edge.in ?? "MISSING_WIRE",
               out: edge.out ?? "MISSING_WIRE",
             };
+
+            if (edge.constant) {
+              newEdge.constant = edge.constant;
+            }
 
             const existingEdge = breadboardGraph.edges.find(
               (graphEdge) =>
@@ -879,7 +920,7 @@ export class Editor extends LitElement {
               );
 
               if (existingNode) {
-                comment.id = this.#createRandomID("comment");
+                comment.id = createRandomID("comment");
               }
 
               // Grab the x & y coordinates, delete them, and use them to instruct
@@ -909,7 +950,7 @@ export class Editor extends LitElement {
                 comment.id,
                 "comment",
                 position,
-                this.collapseNodesByDefault,
+                this.collapseNodesByDefault ? "collapsed" : "expanded",
                 false
               );
               this.#graphRenderer.addToAutoSelect(comment.id);
@@ -978,7 +1019,7 @@ export class Editor extends LitElement {
       return (
         prev +
         (idx > 0 ? ", " : "") +
-        `(${curr.id}, {x: ${curr.x}, y: ${curr.y}, collapsed: ${curr.collapsed}})`
+        `(${curr.id}, {x: ${curr.x}, y: ${curr.y}, collapsed: ${curr.expansionState}})`
       );
     }, "");
     const editsEvt = new MultiEditEvent(
@@ -999,7 +1040,7 @@ export class Editor extends LitElement {
                 visual: {
                   x: node.x,
                   y: node.y,
-                  collapsed: node.collapsed,
+                  collapsed: node.expansionState,
                 },
               },
             };
@@ -1019,7 +1060,7 @@ export class Editor extends LitElement {
               commentNode.metadata.visual = {
                 x: node.x,
                 y: node.y,
-                collapsed: node.collapsed,
+                collapsed: node.expansionState,
               };
             }
 
@@ -1034,7 +1075,10 @@ export class Editor extends LitElement {
       this.subGraphId
     );
 
-    this.#ignoreNextUpdate = true;
+    if (this.readOnly) {
+      return;
+    }
+
     this.dispatchEvent(editsEvt);
   }
 
@@ -1169,6 +1213,32 @@ export class Editor extends LitElement {
     );
   }
 
+  #onGraphNodeEdit(evt: Event) {
+    const { id, port, x, y, addHorizontalClickClearance } =
+      evt as GraphNodeEditEvent;
+
+    this.dispatchEvent(
+      new NodeConfigurationUpdateRequestEvent(
+        id,
+        this.subGraphId,
+        port,
+        x,
+        y,
+        addHorizontalClickClearance
+      )
+    );
+  }
+
+  #onGraphEdgeValueSelected(evt: Event) {
+    const { value, schema, x, y } = evt as GraphEdgeValueSelectedEvent;
+    this.dispatchEvent(new EdgeValueSelectedEvent(value, schema, x, y));
+  }
+
+  #onGraphNodeActivitySelected(evt: Event) {
+    const { nodeTitle, runId } = evt as GraphNodeActivitySelectedEvent;
+    this.dispatchEvent(new NodeActivitySelectedEvent(nodeTitle, runId));
+  }
+
   #onDragOver(evt: DragEvent) {
     evt.preventDefault();
   }
@@ -1182,11 +1252,10 @@ export class Editor extends LitElement {
     evt.preventDefault();
     const type = evt.dataTransfer?.getData(DATA_TYPE);
     if (!type || !this.#graphRenderer) {
-      console.warn("No data in dropped node");
       return;
     }
 
-    const id = this.#createRandomID(type);
+    const id = createRandomID(type);
     const x = evt.pageX - this.#left + window.scrollX;
     const y = evt.pageY - this.#top - window.scrollY;
 
@@ -1197,7 +1266,7 @@ export class Editor extends LitElement {
       id,
       type === "comment" ? "comment" : "node",
       { x, y },
-      this.collapseNodesByDefault,
+      this.collapseNodesByDefault ? "collapsed" : "expanded",
       true
     );
 
@@ -1218,19 +1287,6 @@ export class Editor extends LitElement {
         },
       })
     );
-  }
-
-  #createRandomID(type: string) {
-    const randomId = globalThis.crypto.randomUUID();
-    const nextNodeId = randomId.split("-");
-    // Now that types could be URLs, we need to make them a bit
-    // less verbose.
-    if (type.includes(":") || type.includes("#")) {
-      // probably a URL, so let's just use a random id.
-      return `board-${nextNodeId[0]}`;
-    }
-    // TODO: Check for clashes
-    return `${type}-${nextNodeId[0]}`;
   }
 
   #onResize() {
@@ -1255,241 +1311,86 @@ export class Editor extends LitElement {
   }
 
   render() {
-    this.#graphRenderer.highlightedNodeId = this.highlightedNodeId;
+    this.#graphRenderer.topGraphResult = this.subGraphId
+      ? null
+      : this.topGraphResult;
 
     if (this.#graphRenderer) {
       this.#graphRenderer.invertZoomScrollDirection =
         this.invertZoomScrollDirection;
     }
 
-    const rawGraph = this.graph?.raw();
-    const subGraphs: SubGraphs | null = rawGraph?.graphs
-      ? rawGraph.graphs
-      : null;
+    const isRunning = this.topGraphResult
+      ? this.topGraphResult.status === "running" ||
+        this.topGraphResult.status === "paused"
+      : false;
 
-    let showSubGraphSelector = true;
-    if (
-      this.hideSubboardSelectorWhenEmpty &&
-      (!subGraphs || (subGraphs && Object.entries(subGraphs).length === 0))
-    ) {
-      showSubGraphSelector = false;
+    let isInputPending = false;
+    let isError = false;
+    const eventCount = this.run?.events.length ?? 0;
+    const newestEvent = this.run?.events.at(-1);
+    if (newestEvent) {
+      isInputPending =
+        newestEvent.type === "node" &&
+        newestEvent.node.descriptor.type === "input";
+      isError = newestEvent.type === "error";
     }
 
-    return html`${until(this.#processGraph())}
-      ${
-        this.showControls && this.graph !== null
-          ? html` <div id="controls">
-                <button
-                  title="Zoom to fit"
-                  id="zoom-to-fit"
-                  @click=${() => this.#graphRenderer.zoomToFit()}
-                >
-                  Zoom to fit
-                </button>
-                <button
-                  title="Reset Layout"
-                  id="reset-layout"
-                  @click=${() => {
-                    this.#graphRenderer.resetGraphLayout();
-                  }}
-                >
-                  Reset Layout
-                </button>
+    const ribbonMenu = html`<bb-ribbon-menu
+      .graph=${this.graph}
+      .subGraphId=${this.subGraphId}
+      .dataType=${DATA_TYPE}
+      .showExperimentalComponents=${this.showExperimentalComponents}
+      .canSave=${this.capabilities && this.capabilities.save}
+      .canUndo=${this.canUndo}
+      .canRedo=${this.canRedo}
+      .readOnly=${this.readOnly}
+      .isRunning=${isRunning}
+      .follow=${this.zoomToHighlightedNodeDuringRuns}
+      .eventCount=${eventCount}
+      .isInputPending=${isInputPending}
+      .isError=${isError}
+      .isShowingBoardActivityOverlay=${this.isShowingBoardActivityOverlay}
+      @bbnodecreate=${() => {
+        this.#graphRenderer.deselectAllChildren();
+      }}
+      @bbzoomtofit=${() => {
+        this.#graphRenderer.zoomToFit(
+          true,
+          this.isShowingBoardActivityOverlay ? 400 : 0
+        );
+      }}
+      @bbresetlayout=${() => {
+        this.#graphRenderer.resetGraphLayout();
+      }}
+      @bbtogglefollow=${() => {
+        const shouldZoom = !this.zoomToHighlightedNodeDuringRuns;
+        this.zoomToHighlightedNodeDuringRuns = shouldZoom;
+        this.#graphRenderer.zoomToHighlightedNode = shouldZoom;
+        globalThis.localStorage.setItem(ZOOM_KEY, shouldZoom.toString());
 
-                ${showSubGraphSelector
-                  ? html`<div class="divider"></div>
-                      <select
-                        id="subgraph-selector"
-                        @input=${(evt: Event) => {
-                          if (!(evt.target instanceof HTMLSelectElement)) {
-                            return;
-                          }
+        if (!shouldZoom) {
+          return;
+        }
 
-                          this.dispatchEvent(
-                            new SubGraphChosenEvent(evt.target.value)
-                          );
-                        }}
-                      >
-                        <option
-                          ?selected=${this.subGraphId === null}
-                          value="${MAIN_BOARD_ID}"
-                        >
-                          Main board
-                        </option>
-                        ${map(
-                          Object.entries(subGraphs || []),
-                          ([subGraphId, subGraph]) => {
-                            return html`<option
-                              value="${subGraphId}"
-                              ?selected=${subGraphId === this.subGraphId}
-                            >
-                              ${subGraph.title || subGraphId}
-                            </option>`;
-                          }
-                        )}
-                      </select>`
-                  : nothing}
-                <button
-                  id="add-sub-board"
-                  title="Add new sub board"
-                  @click=${() => this.#proposeNewSubGraph()}
-                >
-                  Add sub board
-                </button>
-                <button
-                  id="delete-sub-board"
-                  title="Delete this sub board"
-                  ?disabled=${this.subGraphId === null}
-                  @click=${() => {
-                    if (!this.subGraphId) {
-                      return;
-                    }
+        if (this.topGraphResult?.currentNode) {
+          this.#graphRenderer.zoomToNode(
+            this.topGraphResult.currentNode.descriptor.id,
+            -0.1
+          );
+        }
+      }}
+      @bbaddsubgraph=${() => {
+        this.#proposeNewSubGraph();
+      }}
+    ></bb-ribbon-menu>`;
 
-                    if (
-                      !confirm(
-                        "Are you sure you wish to delete this sub board?"
-                      )
-                    ) {
-                      return;
-                    }
+    const editor = html`${until(this.#processGraph())}`;
+    const readOnlyFlag =
+      this.graph !== null && this.readOnly
+        ? html`<aside id="readonly-overlay">Read-only View</aside>`
+        : nothing;
 
-                    this.dispatchEvent(
-                      new SubGraphDeleteEvent(this.subGraphId)
-                    );
-                  }}
-                >
-                  Delete sub board
-                </button>
-              </div>
-
-              ${this.graph !== null
-                ? html` <div id="nodes">
-                    <input
-                      ${ref(this.#addButtonRef)}
-                      name="add-node"
-                      id="add-node"
-                      type="checkbox"
-                      @input=${(evt: InputEvent) => {
-                        if (!(evt.target instanceof HTMLInputElement)) {
-                          return;
-                        }
-
-                        if (!this.#nodeSelectorRef.value) {
-                          return;
-                        }
-
-                        const nodeSelector = this.#nodeSelectorRef.value;
-                        nodeSelector.inert = !evt.target.checked;
-
-                        if (!evt.target.checked) {
-                          return;
-                        }
-                        nodeSelector.selectSearchInput();
-                      }}
-                    />
-                    <label for="add-node">Components</label>
-
-                    <bb-node-selector
-                      ${ref(this.#nodeSelectorRef)}
-                      inert
-                      .graph=${this.graph}
-                      .showExperimentalComponents=${this
-                        .showExperimentalComponents}
-                      @bbkitnodechosen=${(evt: KitNodeChosenEvent) => {
-                        const id = this.#createRandomID(evt.nodeType);
-                        this.dispatchEvent(
-                          new NodeCreateEvent(id, evt.nodeType)
-                        );
-                      }}
-                    ></bb-node-selector>
-
-                    ${this.showNodeShortcuts
-                      ? html`<div class="divider"></div>
-                          <button
-                            draggable="true"
-                            title="Add Specialist"
-                            id="shortcut-add-specialist"
-                            @dblclick=${() => {
-                              const id = this.#createRandomID("specialist");
-                              this.#graphRenderer.deselectAllChildren();
-                              this.dispatchEvent(
-                                new NodeCreateEvent(id, "specialist")
-                              );
-                            }}
-                            @dragstart=${(evt: DragEvent) => {
-                              if (!evt.dataTransfer) {
-                                return;
-                              }
-                              evt.dataTransfer.setData(DATA_TYPE, "specialist");
-                            }}
-                          >
-                            Add Specialist
-                          </button>
-                          <button
-                            draggable="true"
-                            title="Add human"
-                            id="shortcut-add-human"
-                            @dblclick=${() => {
-                              const id = this.#createRandomID("human");
-                              this.#graphRenderer.deselectAllChildren();
-                              this.dispatchEvent(
-                                new NodeCreateEvent(id, "human")
-                              );
-                            }}
-                            @dragstart=${(evt: DragEvent) => {
-                              if (!evt.dataTransfer) {
-                                return;
-                              }
-                              evt.dataTransfer.setData(DATA_TYPE, "human");
-                            }}
-                          >
-                            Add Human
-                          </button>
-                          <button
-                            draggable="true"
-                            title="Add looper"
-                            id="shortcut-add-looper"
-                            @dblclick=${() => {
-                              const id = this.#createRandomID("looper");
-                              this.#graphRenderer.deselectAllChildren();
-                              this.dispatchEvent(
-                                new NodeCreateEvent(id, "looper")
-                              );
-                            }}
-                            @dragstart=${(evt: DragEvent) => {
-                              if (!evt.dataTransfer) {
-                                return;
-                              }
-                              evt.dataTransfer.setData(DATA_TYPE, "looper");
-                            }}
-                          >
-                            Add Human
-                          </button>
-                          <button
-                            draggable="true"
-                            title="Add comment"
-                            id="shortcut-add-comment"
-                            @dblclick=${() => {
-                              const id = this.#createRandomID("comment");
-                              this.#graphRenderer.deselectAllChildren();
-                              this.dispatchEvent(
-                                new NodeCreateEvent(id, "comment")
-                              );
-                            }}
-                            @dragstart=${(evt: DragEvent) => {
-                              if (!evt.dataTransfer) {
-                                return;
-                              }
-                              evt.dataTransfer.setData(DATA_TYPE, "comment");
-                            }}
-                          >
-                            Add Human
-                          </button>`
-                      : nothing}
-                  </div>`
-                : nothing}`
-          : nothing
-      }
-      </div>`;
+    return [this.graph ? ribbonMenu : nothing, editor, readOnlyFlag];
   }
 }

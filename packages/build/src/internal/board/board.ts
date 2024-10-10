@@ -5,10 +5,7 @@
  */
 
 import type { NodeDescriberResult, Schema } from "@google-labs/breadboard";
-import type {
-  GraphMetadata,
-  NodeMetadata,
-} from "@google-labs/breadboard-schema/graph.js";
+import type { GraphMetadata, NodeMetadata } from "@breadboard-ai/types";
 import type { JSONSchema4 } from "json-schema";
 import { anyOf, unsafeType, type Value } from "../../index.js";
 import {
@@ -47,6 +44,7 @@ import type {
   RemoveReadonly,
 } from "../common/type-util.js";
 import type { StarInputs } from "./star-inputs.js";
+import type { KitBinding } from "../kit.js";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
@@ -83,6 +81,7 @@ export function board<const T extends BoardInit>({
   description,
   version,
   metadata,
+  describer,
 }: T): BoardDefinition<
   Expand<AutoOptional<RemoveReadonly<SimplifyBoardInitInputs<T["inputs"]>>>>,
   Expand<AutoOptional<RemoveReadonly<SimplifyBoardInitOutputs<T["outputs"]>>>>
@@ -111,6 +110,7 @@ export function board<const T extends BoardInit>({
     metadata,
     isBoard: true,
     describe: defImpl.describe.bind(defImpl),
+    describer,
   });
   // TODO(aomarks) This is a bit silly, need a small refactor here so that we
   // aren't juggling all these objects. The complexity here comes from the fact
@@ -337,13 +337,15 @@ class BoardDefinitionImpl<
   }
 
   instantiate(
-    values: ValuesOrOutputPorts<ExtractPortTypes<IPORTS>>
+    values: ValuesOrOutputPorts<ExtractPortTypes<IPORTS>>,
+    kitBinding?: KitBinding
   ): OldBoardInstance<IPORTS, OPORTS> {
     return new OldBoardInstance(
       this.#inputs,
       this.#outputs,
       values,
-      this.definition!
+      this.definition!,
+      kitBinding
     );
   }
 
@@ -482,17 +484,20 @@ export class OldBoardInstance<
   readonly outputs: OPORTS;
   readonly values: ValuesOrOutputPorts<ExtractPortTypes<IPORTS>>;
   readonly definition: OldBoardDefinition<IPORTS, OPORTS>;
+  readonly __kitBinding?: KitBinding;
 
   constructor(
     inputs: IPORTS,
     outputs: OPORTS,
     values: ValuesOrOutputPorts<ExtractPortTypes<IPORTS>>,
-    definition: OldBoardDefinition<IPORTS, OPORTS>
+    definition: OldBoardDefinition<IPORTS, OPORTS>,
+    kitBinding?: KitBinding
   ) {
     this.inputs = inputs;
     this.outputs = this.#tagOutputs(outputs);
     this.values = values;
     this.definition = definition;
+    this.__kitBinding = kitBinding;
   }
 
   /**
@@ -677,6 +682,7 @@ export interface BoardInit {
   description?: string;
   version?: string;
   metadata?: GraphMetadata;
+  describer?: GenericBoardDefinition;
 }
 
 type AnonymousInputNodeShorthand = Record<
@@ -695,9 +701,11 @@ export type BoardDefinition<
 export type BoardInstantiateFunction<
   I extends Record<string, JsonSerializable | undefined>,
   O extends Record<string, JsonSerializable | undefined>,
-> = (inputs: {
-  [K in keyof I]: Value<I[K]>;
-}) => BoardInstance<I, O>;
+> = (
+  inputs: {
+    [K in keyof I]: Value<I[K]>;
+  } & { $id?: string; $metadata?: NodeMetadata }
+) => BoardInstance<I, O>;
 
 export interface BoardInstance<
   I extends Record<string, JsonSerializable | undefined>,
@@ -813,7 +821,7 @@ export function outputNode<
   T extends Record<string, Value | Output | undefined>,
 >(
   outputs: T,
-  metadata?: NodeMetadata & { id?: string }
+  metadata?: NodeMetadata & { id?: string } & { bubble?: boolean }
 ): OutputNode<Expand<ExtractOutputTypes<T>>> {
   const result: Record<string, unknown> = { ...outputs };
   if (metadata) {
@@ -821,6 +829,11 @@ export function outputNode<
       result.$id = metadata.id;
       metadata = { ...metadata };
       delete metadata["id"];
+    }
+    if (metadata.bubble) {
+      result.$bubble = metadata.bubble;
+      metadata = { ...metadata };
+      delete metadata["bubble"];
     }
     result.$metadata = metadata;
   }

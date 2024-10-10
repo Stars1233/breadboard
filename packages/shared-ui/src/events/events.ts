@@ -7,11 +7,14 @@
 import type {
   EditSpec,
   GraphDescriptor,
+  InspectablePort,
   NodeConfiguration,
   NodeDescriptor,
+  Schema,
 } from "@google-labs/breadboard";
 import type { EdgeData, Settings, UserOutputValues } from "../types/types.js";
-import type { NodeMetadata } from "@google-labs/breadboard-schema/graph.js";
+import type { NodeMetadata, NodeValue } from "@breadboard-ai/types";
+import { ComponentExpansionState } from "../elements/editor/types.js";
 
 const eventInit = {
   bubbles: true,
@@ -63,6 +66,30 @@ export class StopEvent extends Event {
   }
 }
 
+export class SaveEvent extends Event {
+  static eventName = "bbsave";
+
+  constructor() {
+    super(SaveEvent.eventName, { ...eventInit });
+  }
+}
+
+export class SaveAsEvent extends Event {
+  static eventName = "bbsaveas";
+
+  constructor() {
+    super(SaveAsEvent.eventName, { ...eventInit });
+  }
+}
+
+export class DismissedEvent extends Event {
+  static eventName = "bbdismissed";
+
+  constructor() {
+    super(DismissedEvent.eventName, { ...eventInit });
+  }
+}
+
 export class BoardInfoUpdateEvent extends Event {
   static eventName = "bbboardinfoupdate";
 
@@ -87,8 +114,77 @@ export class BoardUnloadEvent extends Event {
 }
 
 /**
+ * Run Management
+ */
+
+export class RunDownloadEvent extends Event {
+  static eventName = "bbrundownload";
+
+  constructor() {
+    super(RunDownloadEvent.eventName, { ...eventInit });
+  }
+}
+
+/**
  * General UI
  */
+
+export class ShowTooltipEvent extends Event {
+  static eventName = "bbshowtooltip";
+  constructor(
+    public readonly message: string,
+    public readonly x: number,
+    public readonly y: number
+  ) {
+    super(ShowTooltipEvent.eventName, { ...eventInit });
+  }
+}
+
+export class ToggleBoardActivityEvent extends Event {
+  static eventName = "bbtoggleboardactivity";
+  constructor(
+    public readonly x: number,
+    public readonly y: number,
+    public readonly forceOn = false
+  ) {
+    super(ToggleBoardActivityEvent.eventName, { ...eventInit });
+  }
+}
+
+export class AddSubgraphEvent extends Event {
+  static eventName = "bbaddsubgraph";
+  constructor() {
+    super(AddSubgraphEvent.eventName, { ...eventInit });
+  }
+}
+
+export class ZoomToFitEvent extends Event {
+  static eventName = "bbzoomtofit";
+  constructor() {
+    super(ZoomToFitEvent.eventName, { ...eventInit });
+  }
+}
+
+export class ToggleFollowEvent extends Event {
+  static eventName = "bbtogglefollow";
+  constructor() {
+    super(ToggleFollowEvent.eventName, { ...eventInit });
+  }
+}
+
+export class ResetLayoutEvent extends Event {
+  static eventName = "bbresetlayout";
+  constructor() {
+    super(ResetLayoutEvent.eventName, { ...eventInit });
+  }
+}
+
+export class HideTooltipEvent extends Event {
+  static eventName = "bbhidetooltip";
+  constructor() {
+    super(HideTooltipEvent.eventName, { ...eventInit });
+  }
+}
 
 export class ResetEvent extends Event {
   static eventName = "bbreset";
@@ -192,6 +288,14 @@ export class InputErrorEvent extends Event {
   }
 }
 
+export class PersistToggleEvent extends Event {
+  static eventName = "bbpersisttoggle";
+
+  constructor() {
+    super(PersistToggleEvent.eventName, { ...eventInit });
+  }
+}
+
 /**
  * Graph Editing
  */
@@ -265,7 +369,8 @@ export class GraphProviderLoadRequestEvent extends Event {
 
   constructor(
     public readonly providerName: string,
-    public readonly url: string
+    public readonly url: string,
+    public readonly newTab = false
   ) {
     super(GraphProviderLoadRequestEvent.eventName, { ...eventInit });
   }
@@ -413,6 +518,34 @@ export class NodeUpdateEvent extends Event {
   }
 }
 
+export class NodePartialUpdateEvent extends Event {
+  static eventName = "bbnodepartialupdate";
+
+  constructor(
+    public readonly id: string,
+    public readonly subGraphId: string | null = null,
+    public readonly configuration: NodeConfiguration,
+    public readonly metadata: NodeMetadata | null = null
+  ) {
+    super(NodePartialUpdateEvent.eventName, { ...eventInit });
+  }
+}
+
+export class NodeConfigurationUpdateRequestEvent extends Event {
+  static eventName = "bbnodeconfigurationupdaterequest";
+
+  constructor(
+    public readonly id: string,
+    public readonly subGraphId: string | null = null,
+    public readonly port: InspectablePort | null = null,
+    public readonly x: number = 0,
+    public readonly y: number = 0,
+    public readonly addHorizontalClickClearance = true
+  ) {
+    super(NodeConfigurationUpdateRequestEvent.eventName, { ...eventInit });
+  }
+}
+
 export class NodeMetadataUpdateEvent extends Event {
   static eventName = "bbnodemetadataupdate";
 
@@ -422,6 +555,17 @@ export class NodeMetadataUpdateEvent extends Event {
     public readonly metadata: NodeDescriptor["metadata"]
   ) {
     super(NodeMetadataUpdateEvent.eventName, { ...eventInit });
+  }
+}
+
+export class NodeTypeRetrievalErrorEvent extends Event {
+  static eventName = "bbnodetyperetrievalerror";
+
+  constructor(
+    public readonly id: string,
+    public readonly subGraphId: string | null = null
+  ) {
+    super(NodeTypeRetrievalErrorEvent.eventName, { ...eventInit });
   }
 }
 
@@ -461,6 +605,51 @@ export class MultiEditEvent extends Event {
   }
 }
 
+export class EdgeValueSelectedEvent extends Event {
+  static eventName = "bbedgevalueselected";
+
+  constructor(
+    public readonly value: NodeValue[],
+    public readonly schema: Schema | null,
+    public readonly x: number,
+    public readonly y: number
+  ) {
+    super(EdgeValueSelectedEvent.eventName, { ...eventInit });
+  }
+}
+
+export class NodeActivitySelectedEvent extends Event {
+  static eventName = "bbnodeactivityselected";
+
+  constructor(
+    public readonly nodeTitle: string,
+    public readonly runId: string
+  ) {
+    super(NodeActivitySelectedEvent.eventName, { ...eventInit });
+  }
+}
+
+export class CommentEditRequestEvent extends Event {
+  static eventName = "bbcommenteditrequest";
+
+  constructor(
+    public readonly id: string,
+    public readonly x: number,
+    public readonly y: number,
+    public readonly subGraphId: string | null = null
+  ) {
+    super(CommentEditRequestEvent.eventName, { ...eventInit });
+  }
+}
+
+export class GraphInteractionEvent extends Event {
+  static eventName = "bbgraphinteraction";
+
+  constructor() {
+    super(GraphInteractionEvent.eventName, { ...eventInit });
+  }
+}
+
 export class GraphNodesVisualUpdateEvent extends Event {
   static eventName = "bbgraphnodesmove";
 
@@ -470,10 +659,24 @@ export class GraphNodesVisualUpdateEvent extends Event {
       readonly type: "node" | "comment";
       readonly x: number;
       readonly y: number;
-      readonly collapsed: boolean;
+      readonly expansionState: ComponentExpansionState;
     }>
   ) {
     super(GraphNodesVisualUpdateEvent.eventName, { ...eventInit });
+  }
+}
+
+export class GraphNodeEditEvent extends Event {
+  static eventName = "bbgraphnodeedit";
+
+  constructor(
+    public readonly id: string,
+    public readonly port: InspectablePort | null,
+    public readonly x: number,
+    public readonly y: number,
+    public readonly addHorizontalClickClearance = true
+  ) {
+    super(GraphNodeEditEvent.eventName, { ...eventInit });
   }
 }
 
@@ -506,6 +709,30 @@ export class GraphInitialDrawEvent extends Event {
 
   constructor() {
     super(GraphInitialDrawEvent.eventName, { ...eventInit });
+  }
+}
+
+export class GraphEdgeValueSelectedEvent extends Event {
+  static eventName = "bbgraphedgevalueselected";
+
+  constructor(
+    public readonly value: NodeValue[],
+    public readonly schema: Schema | null,
+    public readonly x: number,
+    public readonly y: number
+  ) {
+    super(GraphEdgeValueSelectedEvent.eventName, { ...eventInit });
+  }
+}
+
+export class GraphNodeActivitySelectedEvent extends Event {
+  static eventName = "bbgraphnodeactivityselected";
+
+  constructor(
+    public readonly nodeTitle: string,
+    public readonly runId: string
+  ) {
+    super(GraphNodeActivitySelectedEvent.eventName, { ...eventInit });
   }
 }
 
@@ -554,5 +781,37 @@ export class GraphNodeDeleteEvent extends Event {
 
   constructor(public readonly id: string) {
     super(GraphNodeDeleteEvent.eventName, { ...eventInit });
+  }
+}
+
+export class GraphShowTooltipEvent extends Event {
+  static eventName = "bbgraphshowtooltip";
+
+  constructor(
+    public readonly message: string,
+    public readonly x: number,
+    public readonly y: number
+  ) {
+    super(GraphShowTooltipEvent.eventName, { ...eventInit });
+  }
+}
+
+export class GraphHideTooltipEvent extends Event {
+  static eventName = "bbgraphhidetooltip";
+
+  constructor() {
+    super(GraphHideTooltipEvent.eventName, { ...eventInit });
+  }
+}
+
+export class GraphCommentEditRequestEvent extends Event {
+  static eventName = "bbgraphcommenteditrequest";
+
+  constructor(
+    public readonly id: string,
+    public readonly x: number,
+    public readonly y: number
+  ) {
+    super(GraphCommentEditRequestEvent.eventName, { ...eventInit });
   }
 }

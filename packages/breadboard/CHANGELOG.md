@@ -1,5 +1,80 @@
 # Changelog
 
+## 0.28.0
+
+### Minor Changes
+
+- ca5f932: Introduce board server blobs API endpoint
+- 049a83b: Add FileSystemBoardServer
+
+### Patch Changes
+
+- 5aded4a: Change for shape rather than instance when formatting errors.
+- b640cd2: Remove spurious "examples" property from blank LLM Content config.
+- ffbcf09: Allow management of Board Servers
+- 7adeed8: Move LLMContent to types package.
+- c031dd6: Do some plumbing work for extensions
+- Updated dependencies [7adeed8]
+  - @breadboard-ai/types@0.1.2
+
+## 0.27.3
+
+### Patch Changes
+
+- Updated dependencies [d20e867]
+  - @breadboard-ai/types@0.1.1
+
+## 0.27.2
+
+### Patch Changes
+
+- 370b7ca: Change option name
+- 7921983: Introduce `@breadboard-ai/types` package.
+- Updated dependencies [7921983]
+  - @breadboard-ai/types@0.1.0
+  - @google-labs/breadboard-schema@1.8.1
+
+## 0.27.1
+
+### Patch Changes
+
+- 5c015f2: Add an options object to createLoader. Allows suppressing the default loading behavior.
+
+## 0.27.0
+
+### Minor Changes
+
+- cb8c99a: Feed static describer results to dynamic describer.
+- 4dadf16: Introduce experimental storeData and retrieveData components in Core Kit.
+- 8f9fddf: Move LightObserver to shared-ui as TopGraphObserver.
+- f61ccf3: Introduce URL-based component types.
+- 8540b93: Convert Content to Build API and merge Specialist 2 to Specialist.
+- 81eafad: Implement selecting runs and viewing them.
+- 4c03455: Introduce Specialist 2 and make Content component support LLM Content.
+- 157c31e: Implement remote board server
+- d7606d3: Implement plumbing for visualizing runs as graphs.
+- d9fd0ab: [project-store] -> [idb-board-server]
+- a6128a3: Switch Visual Editor to use Run API.
+
+### Patch Changes
+
+- 703f17d: Various fixes to make board server work again.
+- 6136d87: Bug fixes for dynamic describers.
+- e61fa66: Dispatch "edge" event for all edges.
+- a104fa7: Teach InspectableRunObserver.load to add the loaded run to its runs.
+- 8a1b8c4: Teach Throttler to not wait on new data if it already has cached data.
+- 9797718: Auto-migrate IDB `GraphProvider` boards
+- 3137076: Include credentials in proxy client fetch.
+- 4cc71ee: Allow pasting star edges.
+- a039d2e: Do a little tidy up of the UI
+- 9783ba8: Fix worker memory leak and throttle describers.
+- aafec7f: Correctly account for the default start tags.
+- 1ad3001: Show configuration previews underneath ports
+- 84ca649: Introduce the "Content" component.
+- Updated dependencies [8d06f3c]
+- Updated dependencies [8540b93]
+  - @google-labs/breadboard-schema@1.8.0
+
 ## 0.26.0
 
 ### Minor Changes

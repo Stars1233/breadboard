@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { StartLabel, StartTag } from "@google-labs/breadboard-schema/graph.js";
+import { StartLabel, StartTag } from "@breadboard-ai/types";
 import type {
   Edge,
   GraphDescriptor,
@@ -44,10 +44,11 @@ export class GraphRepresentation {
     let hasStartLabels = false;
     this.nodes.forEach((node) => {
       node.metadata?.tags?.forEach((tag) => {
-        const startTag = tag as StartTag;
+        let startTag = tag as StartTag;
         if (typeof startTag === "string" && startTag === "start") {
-          entries.add(node.id);
-        } else if (startTag.type === "start") {
+          startTag = { type: "start", label: "default" };
+        }
+        if (startTag.type === "start") {
           const label = startTag.label ?? "default";
           hasStartLabels = true;
           if (label === start) {

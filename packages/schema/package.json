@@ -1,6 +1,6 @@
 {
   "name": "@google-labs/breadboard-schema",
-  "version": "1.7.0",
+  "version": "1.8.1",
   "license": "Apache-2.0",
   "author": "Google Labs Team",
   "repository": {
@@ -73,6 +73,9 @@
         "src/**/*.ts",
         "tsconfig.json",
         "../../core/tsconfig/base.json"
+      ],
+      "dependencies": [
+        "../types:build:tsc"
       ],
       "output": [
         "dist/",

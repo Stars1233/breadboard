@@ -5,7 +5,6 @@
  */
 
 import {
-  ErrorObject,
   GraphProvider,
   InspectableRun,
   InspectableRunEvent,
@@ -35,6 +34,7 @@ import {
   isLLMContentArrayBehavior,
   isLLMContentBehavior,
 } from "../../utils/index.js";
+import { formatError } from "../../utils/format-error.js";
 
 @customElement("bb-activity-log")
 export class ActivityLog extends LitElement {
@@ -281,7 +281,7 @@ export class ActivityLog extends LitElement {
         prev.push({
           name: key,
           title: schema.title ?? key,
-          secret: false,
+          secret: true,
           schema,
           configured: false,
           required: true,
@@ -293,27 +293,8 @@ export class ActivityLog extends LitElement {
       [] as UserInputConfiguration[]
     );
 
-    // Potentially do the autosubmit.
+    // If there aren't any secrets to enter, we can skip rendering the control.
     if (userInputs.every((secret) => secret.value !== undefined)) {
-      for (const input of userInputs) {
-        if (typeof input.value !== "string") {
-          console.warn(
-            `Expected secret as string, instead received ${typeof input.value}`
-          );
-          continue;
-        }
-
-        // Dispatch an event for each secret received.
-        this.dispatchEvent(
-          new InputEnterEvent(
-            input.name,
-            { secret: input.value },
-            /* allowSavingIfSecret */ true
-          )
-        );
-      }
-
-      // If we have chosen to autosubmit do not render the control.
       return html``;
     }
 
@@ -354,27 +335,25 @@ export class ActivityLog extends LitElement {
             id=${id}
             .connectionId=${id.replace(/^connection:/, "")}
           ></bb-connection-input>`;
+        } else {
+          return html`<bb-user-input
+            id=${event.id}
+            .showTypes=${false}
+            .inputs=${userInputs}
+            ${ref(this.#userInputRef)}
+            @keydown=${(evt: KeyboardEvent) => {
+              const isMac = navigator.platform.indexOf("Mac") === 0;
+              const isCtrlCommand = isMac ? evt.metaKey : evt.ctrlKey;
+
+              if (!(evt.key === "Enter" && isCtrlCommand)) {
+                return;
+              }
+
+              continueRun();
+            }}
+          ></bb-user-input>`;
         }
-
-        return html``;
       })}
-
-      <bb-user-input
-        id=${event.id}
-        .showTypes=${false}
-        .inputs=${userInputs}
-        ${ref(this.#userInputRef)}
-        @keydown=${(evt: KeyboardEvent) => {
-          const isMac = navigator.platform.indexOf("Mac") === 0;
-          const isCtrlCommand = isMac ? evt.metaKey : evt.ctrlKey;
-
-          if (!(evt.key === "Enter" && isCtrlCommand)) {
-            return;
-          }
-
-          continueRun();
-        }}
-      ></bb-user-input>
 
       <button class="continue-button" @click=${() => continueRun()}>
         Continue
@@ -417,6 +396,10 @@ export class ActivityLog extends LitElement {
         }
       }
 
+      if (schema.type === "string" && typeof value === "object") {
+        value = undefined;
+      }
+
       prev.push({
         name,
         title: schema.title ?? name,
@@ -453,6 +436,7 @@ export class ActivityLog extends LitElement {
       <h1 ?data-message-idx=${this.showExtendedInfo ? idx : nothing}>
         ${node.title()}
       </h1>
+      ${node.description() ? html`<h2>${node.description()}</h2>` : nothing}
       <bb-user-input
         id="${descriptor.id}"
         .providers=${this.providers}
@@ -567,10 +551,26 @@ export class ActivityLog extends LitElement {
                   >`
               : nothing}
           </h1>`
-        : nothing}
+        : html`${showLogDownload
+            ? downloadReady
+              ? html`<aside id="download-container">
+                  <a
+                    class="download"
+                    @click=${(evt: Event) => this.#download(evt)}
+                    >Click to Download</a
+                  >
+                </aside>`
+              : html`<aside id="download-container">
+                  <a
+                    class="download"
+                    @click=${(evt: Event) => this.#getRunLog(evt)}
+                    >Download</a
+                  >
+                </aside>`
+            : nothing}`}
       ${this.events && this.events.length
         ? this.events.map((event, idx) => {
-            const isNew = this.#seenItems.has(event.id);
+            const isNew = !this.#seenItems.has(event.id);
             this.#seenItems.add(event.id);
 
             let content:
@@ -615,6 +615,9 @@ export class ActivityLog extends LitElement {
                     >
                       ${node.title()}
                     </h1>
+                    ${node.description() && node.description() !== node.title()
+                      ? html`<h2>${node.description()}</h2>`
+                      : nothing}
                     ${until(additionalData)} ${this.#createRunInfo(event.runs)}
                   </section>`;
                   break;
@@ -632,31 +635,7 @@ export class ActivityLog extends LitElement {
               }
 
               case "error": {
-                const { error } = event;
-                let output = "";
-                if (typeof error === "string") {
-                  output = error;
-                } else {
-                  if ((error.error as Error)?.name === "AbortError") {
-                    console.log("💖 actually aborted");
-                  }
-                  if (typeof error.error === "string") {
-                    output = error.error;
-                  } else {
-                    let messageOutput = "";
-                    let errorData = error;
-                    while (typeof errorData === "object") {
-                      if (errorData && "message" in errorData) {
-                        messageOutput += `${errorData.message}\n`;
-                      }
-
-                      errorData = errorData.error as ErrorObject;
-                    }
-
-                    output = messageOutput;
-                  }
-                }
-
+                const output = formatError(event.error);
                 content = html`${output}`;
                 break;
               }

@@ -1,5 +1,104 @@
 # Changelog
 
+## 0.10.4
+
+### Patch Changes
+
+- b5981d0: Set url for the component board.
+- Updated dependencies [5aded4a]
+- Updated dependencies [b640cd2]
+- Updated dependencies [ffbcf09]
+- Updated dependencies [7adeed8]
+- Updated dependencies [ca5f932]
+- Updated dependencies [049a83b]
+- Updated dependencies [c031dd6]
+  - @google-labs/breadboard@0.28.0
+  - @breadboard-ai/types@0.1.2
+
+## 0.10.3
+
+### Patch Changes
+
+- Updated dependencies [d20e867]
+  - @breadboard-ai/types@0.1.1
+  - @google-labs/breadboard@0.27.3
+
+## 0.10.2
+
+### Patch Changes
+
+- 7921983: Introduce `@breadboard-ai/types` package.
+- Updated dependencies [370b7ca]
+- Updated dependencies [7921983]
+  - @google-labs/breadboard@0.27.2
+  - @breadboard-ai/types@0.1.0
+
+## 0.10.1
+
+### Patch Changes
+
+- 690ebe6: Allow definition inputs/outputs to be optional
+- Updated dependencies [5c015f2]
+  - @google-labs/breadboard@0.27.1
+
+## 0.10.0
+
+### Minor Changes
+
+- 54c8197: Make build API kit function async
+- 8540b93: Convert Content to Build API and merge Specialist 2 to Specialist.
+
+### Patch Changes
+
+- 49e2740: Allow passing a raw GraphDescriptor to Build API kit function
+- 2f1b85c: When wiring star output to a node, the input port needs to be empty string instead of star.
+- c145fdd: Add bubble parameter to outputNode function
+- 226be62: Support logLevel metadata
+- 2fa05f0: Export some additional types
+- f71bcfb: Add a Breadboard Type Expression to represent JSON schema itself.
+
+  For now this is using our Schema type, and a generic object schema
+  with the json-schema behavior. In the future we can switch this to
+  the official JSON Schema types, and a {$ref} schema for the official
+  JSON Schema schema.
+
+- 3188607: Get titles/descriptions from either metadata or toplevel
+- 8330f0c: Add rawInput function
+- 1423647: Fix incorrect JSON Schema for jsonSchema
+- 6cdf20c: The anyOf function now hoists out any common "type" it finds, to help with code in breadboard that assumes there is always a top-level type (e.g. when visual editor looks for llm-content).
+- f63a497: Fix incorrect position of deprecated behavior
+- 91fe8bb: Allow annotating output ports as deprecated
+- 100fc95: Various fixes and polish.
+- cab83ce: Allow wiring up a board's $error
+- e19f046: Allow setting $id and $metadata when initializing a board instance
+- 5834c81: Components imported through kit objects are now serialized directly with "type" instead of via an invoke node.
+- 0ef793f: Export ConvertBreadboardType utility
+- Updated dependencies [703f17d]
+- Updated dependencies [6136d87]
+- Updated dependencies [cb8c99a]
+- Updated dependencies [4dadf16]
+- Updated dependencies [8f9fddf]
+- Updated dependencies [f61ccf3]
+- Updated dependencies [e61fa66]
+- Updated dependencies [a104fa7]
+- Updated dependencies [8a1b8c4]
+- Updated dependencies [9797718]
+- Updated dependencies [8540b93]
+- Updated dependencies [81eafad]
+- Updated dependencies [4c03455]
+- Updated dependencies [3137076]
+- Updated dependencies [157c31e]
+- Updated dependencies [4cc71ee]
+- Updated dependencies [a039d2e]
+- Updated dependencies [9783ba8]
+- Updated dependencies [aafec7f]
+- Updated dependencies [1ad3001]
+- Updated dependencies [d7606d3]
+- Updated dependencies [84ca649]
+- Updated dependencies [d9fd0ab]
+- Updated dependencies [a6128a3]
+  - @google-labs/breadboard@0.27.0
+
 ## 0.9.1
 
 ### Patch Changes

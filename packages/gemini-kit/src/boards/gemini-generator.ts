@@ -75,7 +75,7 @@ const functionDeclaration = object({
 });
 
 const systemInstruction = input({
-  type: annotate("string", {
+  type: annotate(anyOf("string", object({ parts: array(partType) })), {
     behavior: ["config"],
   }),
   title: "System Instruction",
@@ -95,7 +95,14 @@ const model = input({
   title: "Model",
   description: "The model to use for generation",
   type: annotate(
-    enumeration("gemini-1.5-flash-latest", "gemini-1.5-pro-latest"),
+    enumeration(
+      "gemini-1.5-flash-latest",
+      "gemini-1.5-pro-latest",
+      "gemini-1.5-pro-exp-0801",
+      "gemini-1.5-pro-exp-0827",
+      "gemini-1.5-flash-8b-exp-0827",
+      "gemini-1.5-flash-exp-0827"
+    ),
     {
       behavior: ["config"],
     }
@@ -360,17 +367,28 @@ const body = code(
         throw new Error("Either `text` or `context` parameter is required");
       }
     } else {
+      // Filter out the special "$metadata" role.
+      contents = contents.filter((item) => item.role !== "$metadata");
       // Replace the "tool" role with "user".
       contents = contents.map((item) =>
         item.role === "tool" ? ((item.role = "user"), item) : item
       );
-      const last = contents[contents.length - 1];
-      if (last.role === "model") {
+      if (text) {
+        // Add the user turn.
         contents.push(turn);
       }
+      // Merge contiquous user turns.
+      const merged = [];
+      for (const item of contents) {
+        const { role } = item;
+        if (role === "user" && merged.at(-1)?.role === "user") {
+          merged[merged.length - 1].parts.push(...item.parts);
+        } else {
+          merged.push(item);
+        }
+      }
+      contents = merged;
     }
-    // Filter out the special "$metadata" role.
-    contents = contents.filter((item) => item.role !== "$metadata");
     const result: ConvertBreadboardType<typeof requestBodyType> = { contents };
     if (systemInstruction) {
       let parts;
@@ -378,7 +396,7 @@ const body = code(
         parts = [{ text: systemInstruction }];
       } else {
         parts = systemInstruction.parts;
-        if (!parts) {
+        if (!parts || parts.length === 0) {
           throw new Error(
             `Malformed system instruction: ${JSON.stringify(systemInstruction)}`
           );
@@ -417,6 +435,20 @@ const body = code(
     }
     if (responseMimeType) {
       generationConfig.responseMimeType = responseMimeType;
+      if (responseMimeType === "application/json") {
+        // Filter out any function calls in the context to avoid the 400 error.
+        // Currently, gemini doesn't support function calls when the
+        // responseMimeType is set to application/json.
+        result.contents = contents.filter((item) => {
+          if (item.role === "model") {
+            item.parts = item.parts.filter((part) => !("functionCall" in part));
+            if (item.parts.length === 0) {
+              return false;
+            }
+          }
+          return true;
+        });
+      }
     }
     if (Object.keys(generationConfig).length > 0) {
       result.generationConfig = generationConfig;

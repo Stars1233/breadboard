@@ -45,6 +45,10 @@ export function isLLMContentArrayBehavior(schema: Schema) {
   return true;
 }
 
+export function isTextBehavior(schema: Schema) {
+  return schema.type === "string";
+}
+
 export function behaviorsMatch(schema1: Schema, schema2: Schema): boolean {
   if (schema1.behavior?.length !== schema2.behavior?.length) {
     return false;
@@ -86,6 +90,13 @@ export function isMultiline(schema: Schema) {
 }
 
 export function isSelect(schema: Schema) {
+  return (
+    (schema.enum && schema.enum.length > 0) ||
+    (schema.examples && schema.examples.length > 0)
+  );
+}
+
+export function isEnum(schema: Schema) {
   return schema.enum && schema.enum.length > 0;
 }
 

@@ -12,7 +12,7 @@ import {
   blankLLMContent,
 } from "@google-labs/breadboard";
 import { GraphProviderStore } from "./types";
-import { GraphDescriptor } from "@google-labs/breadboard-schema/graph.js";
+import { GraphDescriptor } from "@breadboard-ai/types";
 import { GraphProviderExtendedCapabilities } from "@google-labs/breadboard";
 
 interface GraphDBStore {
@@ -131,6 +131,7 @@ export class IDBGraphProvider implements GraphProvider {
       }
     }
 
+    storeDb.close();
     this.#storeLocations = storeList;
     this.#ready = this.#refreshAllItems();
   }
@@ -168,6 +169,8 @@ export class IDBGraphProvider implements GraphProvider {
       }
       const db = await idb.openDB<GraphDB>(store.name, store.version);
       const graph = (await db.get("graphs", url.href)) || null;
+      db.close();
+
       return graph;
     } catch (err) {
       // Failed to load.
@@ -206,6 +209,8 @@ export class IDBGraphProvider implements GraphProvider {
       const db = await idb.openDB<GraphDB>(store.name, store.version);
       descriptor.url = url.href;
       await db.put("graphs", descriptor);
+      db.close();
+
       await this.#refreshAllItems();
       return { result: true };
     } catch (err) {
@@ -225,6 +230,8 @@ export class IDBGraphProvider implements GraphProvider {
       }
       const db = await idb.openDB<GraphDB>(store.name, store.version);
       await db.delete("graphs", url.href);
+      db.close();
+
       await this.#refreshAllItems();
       return { result: true };
     } catch (err) {
@@ -288,9 +295,19 @@ export class IDBGraphProvider implements GraphProvider {
       await db.put("graphs", blankBoard);
       graphs = await db.getAll("graphs");
     }
+    db.close();
 
-    const itemsByUrl = graphs.map(
-      (descriptor): [string, GraphProviderItem & { handle: void }] => {
+    const itemsByUrl = graphs
+      .sort((g1, g2) => {
+        if (g1.title && !g2.title) return 1;
+        if (!g1.title && g2.title) return -1;
+        if (!g1.title && !g2.title) return 0;
+
+        if (g1.title! > g2.title!) return 1;
+        if (g1.title! < g2.title!) return -1;
+        return 0;
+      })
+      .map((descriptor): [string, GraphProviderItem & { handle: void }] => {
         const url = descriptor.url || "";
         const { fileName } = this.parseURL(new URL(url));
 
@@ -298,14 +315,14 @@ export class IDBGraphProvider implements GraphProvider {
           fileName,
           {
             url,
+            title: descriptor.title,
             tags: descriptor.metadata?.tags,
             mine: true,
             readonly: false,
             handle: void 0,
           },
         ];
-      }
-    );
+      });
 
     const items: Map<
       string,

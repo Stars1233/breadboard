@@ -426,6 +426,12 @@ export class Navigation extends LitElement {
       height: 20px;
       margin-right: var(--bb-grid-size);
     }
+
+    #loading-message {
+      margin: var(--bb-grid-size-2) 0;
+      font: 400 var(--bb-body-small) / var(--bb-body-line-height-small)
+        var(--bb-font-family);
+    }
   `;
 
   connectedCallback(): void {
@@ -513,31 +519,33 @@ export class Navigation extends LitElement {
   }
 
   #returnToDefaultStore() {
-    this.selectedProvider = "IDBGraphProvider";
-    this.selectedLocation = "default";
-
-    // In the event that the IDB provider is unavailable (like in the debugger),
-    // we fall through to another provider if available.
-    // TODO: Decide if the default store should be configurable from the
-    // settings and passed through to the component.
-    if (
-      this.providers.length === 1 &&
-      this.providers[0].name !== this.selectedProvider
-    ) {
-      const mainProvider = this.providers[0];
-      this.selectedProvider = mainProvider.name;
-      if (mainProvider.items().size === 1) {
-        const providerNames = [...mainProvider.items().keys()];
-        this.selectedLocation = providerNames[0] ?? "default";
-      }
+    if (!this.providers.length) {
+      return;
     }
 
-    this.dispatchEvent(
-      new GraphProviderSelectionChangeEvent(
-        this.selectedProvider,
-        this.selectedLocation
-      )
-    );
+    const mainProvider = this.providers[0];
+    const selectedProvider = mainProvider.name;
+    if (mainProvider.items().size === 0) {
+      return;
+    }
+
+    const providerNames = [...mainProvider.items().keys()];
+    const selectedLocation = providerNames[0];
+
+    if (
+      selectedProvider !== this.selectedProvider &&
+      selectedLocation !== this.selectedLocation
+    ) {
+      this.selectedProvider = selectedProvider;
+      this.selectedLocation = selectedLocation;
+
+      this.dispatchEvent(
+        new GraphProviderSelectionChangeEvent(
+          this.selectedProvider,
+          this.selectedLocation
+        )
+      );
+    }
   }
 
   #providerContents: Promise<TemplateResult<1>> | null = null;
@@ -556,7 +564,12 @@ export class Navigation extends LitElement {
 
     await provider.ready();
 
-    const store = provider.items().get(this.selectedLocation);
+    let store = provider.items().get(this.selectedLocation);
+    if (!store) {
+      store = [...provider.items().values()].find(
+        (provider) => provider.url && provider.url === this.selectedLocation
+      );
+    }
     if (!store) {
       this.#returnToDefaultStore();
       return html`<nav id="menu">Error loading store</nav>`;
@@ -592,9 +605,16 @@ export class Navigation extends LitElement {
     ]: BoardInfo) => {
       return html`<li>
         <button
-          @click=${() => {
+          @click=${(evt: PointerEvent) => {
+            const isMac = navigator.platform.indexOf("Mac") === 0;
+            const isCtrlCommand = isMac ? evt.metaKey : evt.ctrlKey;
+
             this.dispatchEvent(
-              new GraphProviderLoadRequestEvent(provider.name, url)
+              new GraphProviderLoadRequestEvent(
+                provider.name,
+                url,
+                isCtrlCommand
+              )
             );
           }}
           data-url=${url}
@@ -604,6 +624,7 @@ export class Navigation extends LitElement {
             tool: tags?.includes("tool") ?? false,
             published: tags?.includes("published") ?? false,
           })}
+          title=${url}
         >
           <span class="name">${title ?? name}</span>
           ${username && !mine
@@ -751,7 +772,7 @@ export class Navigation extends LitElement {
               >
                 ${map(this.providers, (provider) => {
                   return html`${map(provider.items(), ([location, store]) => {
-                    const value = `${provider.name}::${location}`;
+                    const value = `${provider.name}::${store.url ?? location}`;
                     const isSelectedOption = value === selected;
                     return html`<option
                       ?selected=${isSelectedOption}
@@ -772,7 +793,10 @@ export class Navigation extends LitElement {
               </button>
             </div>
           </header>
-          ${until(this.#providerContents, html`Loading...`)}
+          ${until(
+            this.#providerContents,
+            html`<div id="loading-message">Loading...</div>`
+          )}
         </section>
       </nav>
 

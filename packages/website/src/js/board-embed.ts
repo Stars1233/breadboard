@@ -19,6 +19,7 @@ import {
   KitManifest,
   asRuntimeKit,
   createLoader,
+  inspect,
 } from "@google-labs/breadboard";
 import { until } from "lit/directives/until.js";
 import { fromManifest } from "@google-labs/breadboard/kits";
@@ -71,6 +72,17 @@ export class BoardEmbed extends LitElement {
       display: block;
     }
 
+    #overlay {
+      border-radius: 8px;
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: transparent;
+      z-index: 1;
+    }
+
     #see-in-ve {
       position: absolute;
       bottom: var(--bb-grid-size-2);
@@ -115,21 +127,27 @@ export class BoardEmbed extends LitElement {
       fromManifest(AgentKit as KitManifest),
     ];
 
-    const collapseNodesByDefault = this.collapseNodesByDefault === "true";
+    if (!graph) {
+      return html`Unable to load board`;
+    }
 
+    const collapseNodesByDefault = this.collapseNodesByDefault === "true";
+    const inspectableGraph = inspect(graph, { kits, loader });
     return html`<bb-editor
         .loader=${loader}
         .kits=${kits}
         .assetPrefix=${"/breadboard/static"}
-        .graph=${graph}
+        .graph=${inspectableGraph}
         .boardId=${1}
         .editable=${false}
         .showControls=${false}
         .mode=${"minimal"}
         .collapseNodesByDefault=${collapseNodesByDefault}
         .hideSubboardSelectorWhenEmpty=${true}
+        .showNodePreviewValues=${false}
         .readOnly=${true}
       ></bb-editor>
+      <div id="overlay"></div>
       ${this.url
         ? html`<a
             id="see-in-ve"

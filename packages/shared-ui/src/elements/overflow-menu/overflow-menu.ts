@@ -59,6 +59,7 @@ export class OverflowMenu extends LitElement {
       text-align: left;
       border-bottom: 1px solid var(--bb-neutral-300);
       cursor: pointer;
+      min-width: 130px;
     }
 
     button:first-of-type {
@@ -68,6 +69,10 @@ export class OverflowMenu extends LitElement {
     button:last-of-type {
       border-radius: 0 0 var(--bb-grid-size-2) var(--bb-grid-size-2);
       border-bottom: none;
+    }
+
+    button:only-child {
+      border-radius: var(--bb-grid-size-2);
     }
 
     button[disabled] {
@@ -107,6 +112,38 @@ export class OverflowMenu extends LitElement {
 
     button.preview {
       background-image: var(--bb-icon-preview);
+    }
+
+    button.edit {
+      background-image: var(--bb-icon-edit);
+    }
+
+    button.undo {
+      background-image: var(--bb-icon-undo);
+    }
+
+    button.redo {
+      background-image: var(--bb-icon-redo);
+    }
+
+    button.zoom-to-fit {
+      background-image: var(--bb-icon-fit);
+    }
+
+    button.reset-nodes {
+      background-image: var(--bb-icon-reset-nodes);
+    }
+
+    button.edit-board-details {
+      background-image: var(--bb-icon-data-info-alert);
+    }
+
+    button.board {
+      background-image: var(--bb-icon-board);
+    }
+
+    button.add-circle {
+      background-image: var(--bb-icon-add-circle);
     }
   `;
 

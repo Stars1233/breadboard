@@ -4,8 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { InspectableEdgeType } from "@google-labs/breadboard";
+import {
+  Edge,
+  InspectableEdgeType,
+  InspectablePort,
+} from "@google-labs/breadboard";
 import type { EdgeData } from "../../types/types.js";
+import { ComponentExpansionState, VisualMetadata } from "./types.js";
 
 const documentStyles = getComputedStyle(document.documentElement);
 
@@ -16,19 +21,18 @@ export function getGlobalColor(
   defaultValue: ValidColorStrings = "#333333"
 ) {
   const value = documentStyles.getPropertyValue(name)?.replace(/^#/, "");
-  return parseInt(value || defaultValue, 16);
+  const valueAsNumber = parseInt(value || defaultValue, 16);
+  if (Number.isNaN(valueAsNumber)) {
+    return 0xff00ff;
+  }
+  return valueAsNumber;
 }
 
 export function inspectableEdgeToString(edge: EdgeData): string {
   return `${edge.from.descriptor.id}:${edge.out}->${edge.to.descriptor.id}:${edge.in}`;
 }
 
-export function edgeToString(edge: {
-  from: string;
-  to: string;
-  out: string;
-  in: string;
-}): string {
+export function edgeToString(edge: Edge): string {
   const fakeEdge = {
     from: {
       descriptor: {
@@ -44,7 +48,77 @@ export function edgeToString(edge: {
     in: edge.in,
     type: InspectableEdgeType.Ordinary,
   };
-  return inspectableEdgeToString(fakeEdge);
+  return inspectableEdgeToString(fakeEdge as EdgeData);
 }
 
 export const DBL_CLICK_DELTA = 450;
+
+export function isConfigurablePort(
+  port: InspectablePort,
+  expansionState: ComponentExpansionState = "expanded"
+): boolean {
+  if (port.star) return false;
+  if (port.name === "") return false;
+
+  if (expansionState === "advanced") return true;
+
+  if (port.schema.behavior?.includes("config")) return true;
+  const items = port.schema.items;
+  if (items && !Array.isArray(items) && items.behavior?.includes("config")) {
+    return true;
+  }
+
+  return false;
+}
+
+export function computeNextExpansionState(
+  state: ComponentExpansionState
+): ComponentExpansionState {
+  switch (state) {
+    case "expanded":
+      return "advanced";
+    case "collapsed":
+      return "expanded";
+    case "advanced":
+      return "collapsed";
+    default:
+      return "expanded";
+  }
+}
+
+export function expansionStateFromMetadata(
+  collapsed: VisualMetadata["collapsed"],
+  collapseNodesByDefault: boolean
+): ComponentExpansionState {
+  if (typeof collapsed === "boolean") {
+    return collapsed ? "collapsed" : "expanded";
+  } else {
+    return collapsed ?? (collapseNodesByDefault ? "collapsed" : "expanded");
+  }
+}
+
+export function createRandomID(type: string) {
+  const randomId = globalThis.crypto.randomUUID();
+  const nextNodeId = randomId.split("-");
+  // Now that types could be URLs, we need to make them a bit
+  // less verbose.
+  if (type.includes(":") || type.includes("#")) {
+    // probably a URL, so let's create a nice short name from the URL
+    try {
+      const url = new URL(type);
+      const name = url.pathname
+        .split("/")
+        .pop()
+        ?.replace(".bgl.json", "")
+        .slice(0, 15);
+      if (name) {
+        return `${name}-${nextNodeId[0]}`;
+      }
+    } catch (e) {
+      // Ignore.
+    }
+    return `board-${nextNodeId[0]}`;
+  }
+  // TODO: Check for clashes
+  return `${type}-${nextNodeId[0]}`;
+}

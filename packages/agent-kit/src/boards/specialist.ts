@@ -5,253 +5,334 @@
  */
 
 import {
-  NewNodeFactory,
-  NewNodeValue,
-  Schema,
-  base,
+  annotate,
+  array,
   board,
-} from "@google-labs/breadboard";
+  enumeration,
+  input,
+  inputNode,
+  object,
+  output,
+  outputNode,
+  starInputs,
+  Value,
+} from "@breadboard-ai/build";
+import { code, coreKit } from "@google-labs/core-kit";
+import geminiKit from "@google-labs/gemini-kit";
 import {
-  checkAreWeDone,
-  combineContexts,
-  looperTaskAdder,
-  progressReader,
-  splitStartAdder,
-  userPartsAdder,
+  addUserParts,
+  checkAreWeDoneFunction,
+  combineContextsFunction,
+  Context,
+  contextType,
+  functionCallType,
+  type LlmContent,
+  llmContentType,
+  looperProgressType,
+  looperTaskAdderFn,
+  readProgress as readProgressFn,
+  splitStartAdderFunction,
 } from "../context.js";
-import { gemini } from "@google-labs/gemini-kit";
-import { core } from "@google-labs/core-kit";
 import {
-  boardInvocationAssembler,
-  boardToFunction,
-  functionDeclarationsFormatter,
-  functionOrTextRouter,
-  invokeBoardWithArgs,
-  responseCollator,
+  boardInvocationArgsType,
+  boardInvocationAssemblerFunction,
+  functionDeclarationsFormatterFn,
+  functionOrTextRouterFunction,
+  type FunctionSignatureItem,
+  responseCollatorFunction,
+  type ToolResponse,
+  urlMapType,
 } from "../function-calling.js";
+import boardToFunction from "./internal/board-to-function.js";
+import invokeBoardWithArgs from "./internal/invoke-board-with-args.js";
+import specialistDescriber from "./internal/specialist-describer.js";
+import { GenericBoardDefinition } from "@breadboard-ai/build/internal/board/board.js";
+import { substitute } from "../generated/substitute.js";
 
-export type SpecialistType = NewNodeFactory<
+const inputs = starInputs({ type: object({}, "unknown") });
+
+const tools = input({
+  title: "Tools",
+  description:
+    "(Optional) Add tools to this list for the worker to use when needed",
+  type: annotate(
+    array(annotate(object({}, "unknown"), { behavior: ["board"] })),
+    { behavior: ["config"] }
+  ),
+  default: [],
+});
+
+const model = input({
+  title: "Model",
+  description: "Choose the model to use for this specialist.",
+  type: annotate(
+    enumeration(
+      "gemini-1.5-flash-latest",
+      "gemini-1.5-pro-latest",
+      "gemini-1.5-pro-exp-0801",
+      "gemini-1.5-pro-exp-0827",
+      "gemini-1.5-flash-8b-exp-0827",
+      "gemini-1.5-flash-exp-0827"
+    ),
+    {
+      behavior: ["config"],
+    }
+  ),
+  default: "gemini-1.5-flash-latest",
+  examples: ["gemini-1.5-flash-latest"],
+});
+
+const substituteParams = substitute({
+  $metadata: {
+    title: "Substitute Parameters",
+    description: "Performing parameter substitution, if needed.",
+  },
+  "*": inputs,
+});
+
+const addTask = code(
   {
-    in: NewNodeValue;
+    $metadata: {
+      title: "Add Task",
+      description: "Adding task to the prompt.",
+    },
+    context: substituteParams.outputs.in,
+    toAdd: substituteParams.outputs.task,
+  },
+  { context: array(contextType) },
+  addUserParts
+);
+
+const readProgress = code(
+  {
+    $metadata: { title: "Read Progress so far" },
+    context: substituteParams.outputs.in,
+    forkOutputs: false,
   },
   {
-    out: NewNodeValue;
-  }
->;
+    progress: array(looperProgressType),
+    context: array(contextType),
+  },
+  readProgressFn
+);
 
-const specialist = await board(({ in: context, persona, task }) => {
-  context
-    .title("Context in")
-    .description("Incoming conversation context")
-    .isArray()
-    .behavior("llm-content");
-  persona
-    .title("Persona")
-    .description(
-      "Describe the worker's skills, capabilities, mindset, and thinking process"
-    )
-    .isObject()
-    .behavior("llm-content", "config");
-  task
-    .title("Task")
-    .description(
-      "(Optional) Provide a specific task with clear instructions for the worker to complete using the conversation context"
-    )
-    .isObject()
-    .optional()
-    .default(JSON.stringify({}))
-    .behavior("llm-content", "config");
-
-  const toolsInput = base.input({
-    $metadata: {
-      title: "Tools Input",
-      description: "Specify the tools to use",
-    },
-    schema: {
-      type: "object",
-      properties: {
-        tools: {
-          title: "Tools",
-          description:
-            "(Optional) Add tools to this list for the worker to use when needed",
-          type: "array",
-          items: {
-            type: "object",
-            behavior: ["board"],
-          },
-          behavior: ["config"],
-          default: "[]",
-        },
-      },
-    } as Schema,
-  });
-
-  const modelInput = base.input({
-    $metadata: {
-      title: "Model Input",
-      description: "Ask which model to use",
-    },
-    schema: {
-      type: "object",
-      properties: {
-        model: {
-          type: "string",
-          title: "Model",
-          description: "Choose the model to use for this specialist.",
-          enum: [
-            "gemini-1.5-flash-latest",
-            "gemini-1.5-pro-latest",
-            "gemini-1.5-pro-exp-0801",
-          ],
-          default: "gemini-1.5-flash-latest",
-          examples: ["gemini-1.5-flash-latest"],
-          behavior: ["config"],
-        },
-      },
-    } as Schema,
-  });
-
-  const addTask = userPartsAdder({
-    $metadata: { title: "Add Task", description: "Adding task to the prompt." },
-    context,
-    toAdd: task,
-  });
-
-  const readProgress = progressReader({
-    $metadata: { title: "Read Progress so far" },
-    context,
-  });
-
-  const addLooperTask = looperTaskAdder({
+const addLooperTask = code(
+  {
     $metadata: {
       title: "Add Looper Task",
       description: "If there is a pending Looper task, add it.",
     },
-    context: addTask.context,
-    progress: readProgress.progress,
-  });
+    context: addTask.outputs.context,
+    progress: readProgress.outputs.progress,
+  },
+  {
+    context: array(contextType),
+  },
+  looperTaskAdderFn
+);
 
-  const addSplitStart = splitStartAdder({
+const addSplitStart = code(
+  {
     $metadata: {
       title: "Add Split Start",
       description: "Marking the start of parallel processing in the context",
     },
-    context: addLooperTask.context,
-  });
+    context: addLooperTask.outputs.context,
+  },
+  {
+    id: "string",
+    context: array(contextType),
+  },
+  splitStartAdderFunction
+);
 
-  const boardToFunctionWithContext = core.curry({
-    $metadata: {
-      title: "Add Context",
-      description: "Adding context to the board to function converter",
-    },
-    $board: "#boardToFunction",
-    context: addSplitStart.context,
-  });
+const boardToFunctionWithContext = coreKit.curry({
+  $metadata: {
+    title: "Add Context",
+    description: "Adding context to the board to function converter",
+  },
+  $board: boardToFunction,
+  context: addSplitStart.outputs.context,
+});
 
-  const turnBoardsToFunctions = core.map({
-    $id: "turnBoardsToFunctions",
-    $metadata: {
-      title: "Turn Boards into Functions",
-      description: "Turning provided boards into functions",
-    },
-    board: boardToFunctionWithContext.board,
-    list: toolsInput.tools.isArray(),
-  });
+const turnBoardsToFunctions = coreKit.map({
+  $id: "turnBoardsToFunctions",
+  $metadata: {
+    title: "Turn Boards into Functions",
+    description: "Turning provided boards into functions",
+  },
+  board: boardToFunctionWithContext.outputs.board,
+  list: tools,
+});
 
-  const formatFunctionDeclarations = functionDeclarationsFormatter({
+const formatFunctionDeclarations = code(
+  {
     $id: "formatFunctionDeclarations",
     $metadata: {
       title: "Format Function Declarations",
       description: "Formatting the function declarations",
     },
-    list: turnBoardsToFunctions.list,
-  });
+    // TODO(aomarks) Cast needed because coreKit.map doesn't know the schema of
+    // the board that was passed to it (interfaces would fix this).
+    list: turnBoardsToFunctions.outputs.list as Value<FunctionSignatureItem[]>,
+    routes: substituteParams.outputs.outs,
+  },
+  {
+    tools: array("unknown"),
+    urlMap: urlMapType,
+  },
+  functionDeclarationsFormatterFn
+);
 
-  const generator = gemini.text({
-    $metadata: {
-      title: "Gemini API Call",
-      description: "Applying Gemini to do work",
-    },
-    systemInstruction: persona,
-    tools: formatFunctionDeclarations.tools,
-    context: addLooperTask.context,
-    model: modelInput.model,
-  });
+const generator = geminiKit.text({
+  $metadata: {
+    title: "Gemini API Call",
+    description: "Applying Gemini to do work",
+  },
+  systemInstruction: substituteParams.outputs.persona,
+  tools: formatFunctionDeclarations.outputs.tools,
+  context: addLooperTask.outputs.context,
+  model,
+});
 
-  const routeToFunctionsOrText = functionOrTextRouter({
+const routeToFunctionsOrText = code(
+  {
     $id: "router",
     $metadata: {
       title: "Router",
       description: "Routing to either function call invocation or text reply",
     },
-    context: generator.context,
-  });
+    // TODO(aomarks) Our types and gemini's types seem not aligned.
+    context: generator.outputs.context as Value<LlmContent>,
+  },
+  {
+    context: llmContentType,
+    text: "string",
+    functionCalls: array(functionCallType),
+  },
+  functionOrTextRouterFunction
+);
 
-  const assembleInvocations = boardInvocationAssembler({
+const assembleInvocations = code(
+  {
     $id: "assembleBoardInvoke",
     $metadata: {
       title: "Assemble Tool Invoke",
-      description: "Assembling the tool invocation based on Gemini response",
+      description: "Assembling tool invocation based on Gemini response",
     },
-    urlMap: formatFunctionDeclarations.urlMap,
-    context: routeToFunctionsOrText.context,
-    functionCalls: routeToFunctionsOrText.functionCalls,
-  });
+    urlMap: formatFunctionDeclarations.outputs.urlMap,
+    context: routeToFunctionsOrText.outputs.context,
+    functionCalls: routeToFunctionsOrText.outputs.functionCalls,
+  },
+  {
+    list: array(boardInvocationArgsType),
+    routes: array("string"),
+  },
+  boardInvocationAssemblerFunction
+);
 
-  const mapInvocations = core.map({
-    $metadata: {
-      title: "Invoke Tools in Parallel",
-      description: "Invoking tools in parallel",
-    },
-    list: assembleInvocations.list.isArray(),
-    board: "#invokeBoardWithArgs",
-  });
+const mapInvocations = coreKit.map({
+  $metadata: {
+    title: "Invoke Tools in Parallel",
+    description: "Invoking tools in parallel",
+  },
+  list: assembleInvocations.outputs.list,
+  board: invokeBoardWithArgs,
+});
 
-  const formatToolResponse = responseCollator({
+const formatToolResponse = code(
+  {
     $metadata: {
       title: "Format Tool Response",
       description: "Formatting tool response",
     },
-    context: addSplitStart.context,
-    response: mapInvocations.list,
-  });
+    // TODO(aomarks) There's inconsistency between use of LlmContent and Context
+    // across these nodes. Sometimes we need to cast to the other type because
+    // of that.
+    context: addSplitStart.outputs.context as Value<LlmContent[]>,
+    response: mapInvocations.outputs.list as Value<ToolResponse[]>,
+    generated: generator.outputs.context as Value<LlmContent>,
+  },
+  {},
+  responseCollatorFunction
+);
 
-  const addToolResponseToContext = combineContexts({
+const addToolResponseToContext = code(
+  {
     $metadata: {
       title: "Add Tool Response",
       description: "Adding tool response to context",
     },
-    ...formatToolResponse,
-  });
+    // TODO(aomarks) A nicer way to do star wiring. Also, why does the input port have
+    // to be "" instead of "*" (it doesn't work with "*").
+    "": formatToolResponse.unsafeOutput("*"),
+  },
+  {
+    context: array(contextType),
+  },
+  combineContextsFunction
+);
 
-  base.output({
+const routeToolOutput = code(
+  {
     $metadata: {
-      title: "Tool Output",
-      description: "Return tool results as output",
+      title: "Route Tool Output",
+      description: "Routing tool output as needed",
     },
-    out: addToolResponseToContext.context
-      .title("Context out")
-      .isArray()
-      .behavior("llm-content"),
-  });
+    context: addToolResponseToContext.outputs.context,
+    routes: assembleInvocations.outputs.routes,
+  },
+  {},
+  ({ context, routes }) => {
+    const out: Record<string, Context[]> = {};
+    let hasRoutes = false;
+    for (const route of routes) {
+      out[`p-${route}`] = context;
+      hasRoutes = true;
+    }
+    if (!hasRoutes) {
+      return { out: context };
+    }
+    for (let i = context.length - 1; i >= 0; i--) {
+      const item = context[i];
+      if (item.role === "model") {
+        item.parts = item.parts.filter((part) => !("functionCall" in part));
+        break;
+      }
+    }
+    return out;
+  }
+);
 
-  const areWeDoneChecker = checkAreWeDone({
+const toolOutput = outputNode({
+  $metadata: {
+    title: "Tool Output",
+    description: "Return tool results as output",
+  },
+  "": routeToolOutput.unsafeOutput("*"),
+});
+
+const areWeDoneChecker = code(
+  {
     $metadata: {
       title: "Done Check",
       description: "Checking for the 'Done' marker",
     },
-    context: addLooperTask.context,
-    generated: routeToFunctionsOrText.context,
-    text: routeToFunctionsOrText.text,
-  });
+    context: addLooperTask.outputs.context,
+    generated: routeToFunctionsOrText.outputs.context,
+    text: routeToFunctionsOrText.outputs.text,
+  },
+  {
+    context: array(contextType),
+  },
+  checkAreWeDoneFunction
+);
 
-  return {
-    out: areWeDoneChecker.context
-      .title("Context out")
-      .isArray()
-      .behavior("llm-content"),
-  };
-}).serialize({
+const mainOutput = outputNode({
+  out: output(areWeDoneChecker.outputs.context, { title: "Context out" }),
+});
+
+export default board({
   title: "Specialist",
   metadata: {
     icon: "smart-toy",
@@ -259,10 +340,28 @@ const specialist = await board(({ in: context, persona, task }) => {
       url: "https://breadboard-ai.github.io/breadboard/docs/kits/agents/#specialist",
     },
   },
+  version: "2.1.0",
   description:
-    "Given instructions on how to act, performs a single task, optionally invoking tools.",
+    "Given instructions on how to act, makes a single LLM call, optionally invoking tools.",
+  inputs: [
+    inputNode({
+      "*": inputs,
+    }),
+    inputNode(
+      { tools },
+      {
+        title: "Tools Input",
+        description: "Specify the tools to use",
+      }
+    ),
+    inputNode(
+      { model },
+      {
+        title: "Model Input",
+        description: "Ask which model to use",
+      }
+    ),
+  ],
+  outputs: [toolOutput, mainOutput],
+  describer: specialistDescriber as GenericBoardDefinition,
 });
-
-specialist.graphs = { boardToFunction, invokeBoardWithArgs };
-
-export default specialist;

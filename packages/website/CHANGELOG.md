@@ -1,5 +1,214 @@
 # @google-labs/breadboard-website
 
+## 2.6.5
+
+### Patch Changes
+
+- Updated dependencies [b1dfa20]
+- Updated dependencies [9d31e85]
+- Updated dependencies [358d116]
+- Updated dependencies [be6656d]
+- Updated dependencies [5aded4a]
+- Updated dependencies [250dc44]
+- Updated dependencies [4630d8c]
+- Updated dependencies [0884913]
+- Updated dependencies [84b824e]
+- Updated dependencies [4857c1e]
+- Updated dependencies [e4a9453]
+- Updated dependencies [3e04cb3]
+- Updated dependencies [a53f7e7]
+- Updated dependencies [71bd9a7]
+- Updated dependencies [683bab9]
+- Updated dependencies [4ec74a0]
+- Updated dependencies [b640cd2]
+- Updated dependencies [2db4eeb]
+- Updated dependencies [54eb2f3]
+- Updated dependencies [8e793ad]
+- Updated dependencies [acf554c]
+- Updated dependencies [fa87883]
+- Updated dependencies [ffbcf09]
+- Updated dependencies [7adeed8]
+- Updated dependencies [ca5f932]
+- Updated dependencies [b5981d0]
+- Updated dependencies [51c2c39]
+- Updated dependencies [413992d]
+- Updated dependencies [d447a7f]
+- Updated dependencies [049a83b]
+- Updated dependencies [c031dd6]
+- Updated dependencies [646504f]
+- Updated dependencies [1d6d7a3]
+  - @breadboard-ai/shared-ui@1.19.0
+  - @google-labs/breadboard@0.28.0
+  - @google-labs/gemini-kit@0.8.3
+  - @google-labs/core-kit@0.15.3
+  - @google-labs/agent-kit@0.12.4
+  - @google-labs/json-kit@0.3.11
+  - @google-labs/palm-kit@0.1.5
+  - @google-labs/template-kit@0.3.13
+
+## 2.6.4
+
+### Patch Changes
+
+- @google-labs/breadboard@0.27.3
+- @breadboard-ai/shared-ui@1.18.2
+- @google-labs/agent-kit@0.12.3
+- @google-labs/core-kit@0.15.2
+- @google-labs/gemini-kit@0.8.2
+- @google-labs/json-kit@0.3.10
+- @google-labs/template-kit@0.3.12
+
+## 2.6.3
+
+### Patch Changes
+
+- Updated dependencies [6ab0acd]
+- Updated dependencies [370b7ca]
+- Updated dependencies [cae7e34]
+- Updated dependencies [7921983]
+- Updated dependencies [6b3ba07]
+- Updated dependencies [f89b60e]
+  - @breadboard-ai/shared-ui@1.18.1
+  - @google-labs/breadboard@0.27.2
+  - @google-labs/gemini-kit@0.8.1
+  - @google-labs/agent-kit@0.12.2
+  - @google-labs/core-kit@0.15.1
+  - @google-labs/json-kit@0.3.9
+  - @google-labs/template-kit@0.3.11
+
+## 2.6.2
+
+### Patch Changes
+
+- c36391c: Various small fixes
+- 1ad3001: Show configuration previews underneath ports
+- Updated dependencies [ab92d99]
+- Updated dependencies [323216f]
+- Updated dependencies [7fd41bb]
+- Updated dependencies [2726cb8]
+- Updated dependencies [fe61245]
+- Updated dependencies [54c8197]
+- Updated dependencies [f94f498]
+- Updated dependencies [703f17d]
+- Updated dependencies [3d4ca21]
+- Updated dependencies [bc967e3]
+- Updated dependencies [e6e165d]
+- Updated dependencies [6136d87]
+- Updated dependencies [0273985]
+- Updated dependencies [f5d3111]
+- Updated dependencies [cb8c99a]
+- Updated dependencies [4dadf16]
+- Updated dependencies [981bd9e]
+- Updated dependencies [5bf9e8d]
+- Updated dependencies [e543b2e]
+- Updated dependencies [8f9fddf]
+- Updated dependencies [7929eee]
+- Updated dependencies [4e0a4f6]
+- Updated dependencies [fd69479]
+- Updated dependencies [508c4b3]
+- Updated dependencies [033d656]
+- Updated dependencies [f61ccf3]
+- Updated dependencies [e61fa66]
+- Updated dependencies [a104fa7]
+- Updated dependencies [12cdec3]
+- Updated dependencies [b8547b8]
+- Updated dependencies [9a9f5c2]
+- Updated dependencies [65c0449]
+- Updated dependencies [f0b5ccc]
+- Updated dependencies [8a1b8c4]
+- Updated dependencies [1f11bf3]
+- Updated dependencies [77fab49]
+- Updated dependencies [4e00d85]
+- Updated dependencies [58d2e8c]
+- Updated dependencies [2ccac87]
+- Updated dependencies [9797718]
+- Updated dependencies [8efca60]
+- Updated dependencies [679719b]
+- Updated dependencies [2ebed5f]
+- Updated dependencies [4f4f3ee]
+- Updated dependencies [88298d5]
+- Updated dependencies [9c878e2]
+- Updated dependencies [2f68f71]
+- Updated dependencies [b673bfa]
+- Updated dependencies [b84b71b]
+- Updated dependencies [8540b93]
+- Updated dependencies [9254424]
+- Updated dependencies [81eafad]
+- Updated dependencies [4c03455]
+- Updated dependencies [3e68ec2]
+- Updated dependencies [3137076]
+- Updated dependencies [157c31e]
+- Updated dependencies [feeed7a]
+- Updated dependencies [4cc71ee]
+- Updated dependencies [5990fd0]
+- Updated dependencies [d0f99b4]
+- Updated dependencies [9b62fc2]
+- Updated dependencies [a039d2e]
+- Updated dependencies [b6eeb3e]
+- Updated dependencies [ee56556]
+- Updated dependencies [e63b5dd]
+- Updated dependencies [0b78f92]
+- Updated dependencies [cbc418b]
+- Updated dependencies [392d7cd]
+- Updated dependencies [74d50d4]
+- Updated dependencies [e723c09]
+- Updated dependencies [9783ba8]
+- Updated dependencies [edefaf9]
+- Updated dependencies [3e5f3dc]
+- Updated dependencies [77dd2a4]
+- Updated dependencies [9fe7d4f]
+- Updated dependencies [409a07e]
+- Updated dependencies [8c73da3]
+- Updated dependencies [8572be4]
+- Updated dependencies [df9b158]
+- Updated dependencies [502e6d5]
+- Updated dependencies [c36391c]
+- Updated dependencies [9ce8ad3]
+- Updated dependencies [7fdf9c2]
+- Updated dependencies [aafec7f]
+- Updated dependencies [0ab2355]
+- Updated dependencies [f0ce284]
+- Updated dependencies [cc72dcc]
+- Updated dependencies [890b8a2]
+- Updated dependencies [1ad3001]
+- Updated dependencies [93a1d7c]
+- Updated dependencies [e38bf19]
+- Updated dependencies [100fc95]
+- Updated dependencies [4423c35]
+- Updated dependencies [78d6394]
+- Updated dependencies [28e0262]
+- Updated dependencies [863c3e8]
+- Updated dependencies [a049abf]
+- Updated dependencies [ec55e54]
+- Updated dependencies [d7606d3]
+- Updated dependencies [77d9497]
+- Updated dependencies [09b1a4e]
+- Updated dependencies [3abc5f6]
+- Updated dependencies [cac51cb]
+- Updated dependencies [84ca649]
+- Updated dependencies [679119f]
+- Updated dependencies [d9fd0ab]
+- Updated dependencies [a6128a3]
+- Updated dependencies [9c04caa]
+- Updated dependencies [852160e]
+- Updated dependencies [e026112]
+- Updated dependencies [0088ede]
+- Updated dependencies [71b8727]
+- Updated dependencies [94759f7]
+- Updated dependencies [281ab28]
+- Updated dependencies [e74ee2f]
+- Updated dependencies [40988de]
+- Updated dependencies [d0e894d]
+- Updated dependencies [5fc6e8b]
+  - @breadboard-ai/shared-ui@1.17.0
+  - @google-labs/gemini-kit@0.8.0
+  - @google-labs/core-kit@0.15.0
+  - @google-labs/json-kit@0.3.8
+  - @google-labs/agent-kit@0.12.0
+  - @google-labs/breadboard@0.27.0
+  - @google-labs/template-kit@0.3.10
+  - @google-labs/palm-kit@0.1.4
+
 ## 2.6.1
 
 ### Patch Changes

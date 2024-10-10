@@ -1,7 +1,7 @@
 {
   "name": "@breadboard-ai/connection-server",
   "private": true,
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Breadboard Connection Server",
   "license": "Apache-2.0",
   "author": "Google Labs Team",
@@ -36,7 +36,7 @@
       "command": "[ -f ./secrets/local.json ] && export CONNECTIONS_FILE=./secrets/local.json; node --enable-source-maps dist/index.js",
       "service": true,
       "env": {
-        "ALLOWED_ORIGINS": "http://localhost:5173"
+        "ALLOWED_ORIGINS": "http://localhost:5173 http://localhost:3000"
       },
       "dependencies": [
         "build"
@@ -76,8 +76,8 @@
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
-    "eslint": "^8.57.0",
-    "typescript": "^5.5.4",
-    "wireit": "^0.14.8"
+    "eslint": "^8.57.1",
+    "typescript": "^5.6.3",
+    "wireit": "^0.14.9"
   }
 }

@@ -1,5 +1,171 @@
 # @google-labs/breadboard-cli
 
+## 0.11.5
+
+### Patch Changes
+
+- Updated dependencies [9d31e85]
+- Updated dependencies [358d116]
+- Updated dependencies [5aded4a]
+- Updated dependencies [0884913]
+- Updated dependencies [84b824e]
+- Updated dependencies [4857c1e]
+- Updated dependencies [8b14d0e]
+- Updated dependencies [a53f7e7]
+- Updated dependencies [3033a0d]
+- Updated dependencies [b640cd2]
+- Updated dependencies [54eb2f3]
+- Updated dependencies [ffbcf09]
+- Updated dependencies [7adeed8]
+- Updated dependencies [ca5f932]
+- Updated dependencies [b5981d0]
+- Updated dependencies [413992d]
+- Updated dependencies [049a83b]
+- Updated dependencies [c031dd6]
+- Updated dependencies [1d6d7a3]
+  - @breadboard-ai/visual-editor@1.21.0
+  - @google-labs/breadboard@0.28.0
+  - @breadboard-ai/build@0.10.4
+  - @google-labs/core-kit@0.15.3
+  - @breadboard-ai/import@0.1.11
+  - @google-labs/template-kit@0.3.13
+
+## 0.11.4
+
+### Patch Changes
+
+- @google-labs/breadboard@0.27.3
+- @breadboard-ai/build@0.10.3
+- @breadboard-ai/visual-editor@1.20.2
+- @google-labs/core-kit@0.15.2
+- @google-labs/template-kit@0.3.12
+
+## 0.11.3
+
+### Patch Changes
+
+- Updated dependencies [6ab0acd]
+- Updated dependencies [370b7ca]
+- Updated dependencies [cae7e34]
+- Updated dependencies [7921983]
+  - @breadboard-ai/visual-editor@1.20.1
+  - @google-labs/breadboard@0.27.2
+  - @breadboard-ai/build@0.10.2
+  - @google-labs/core-kit@0.15.1
+  - @google-labs/template-kit@0.3.11
+
+## 0.11.2
+
+### Patch Changes
+
+- Updated dependencies [49e2740]
+- Updated dependencies [ab92d99]
+- Updated dependencies [54c8197]
+- Updated dependencies [703f17d]
+- Updated dependencies [4e620ed]
+- Updated dependencies [bc967e3]
+- Updated dependencies [a74db56]
+- Updated dependencies [6136d87]
+- Updated dependencies [cb8c99a]
+- Updated dependencies [2f1b85c]
+- Updated dependencies [4dadf16]
+- Updated dependencies [c145fdd]
+- Updated dependencies [981bd9e]
+- Updated dependencies [226be62]
+- Updated dependencies [5bf9e8d]
+- Updated dependencies [8f9fddf]
+- Updated dependencies [2fa05f0]
+- Updated dependencies [fd69479]
+- Updated dependencies [508c4b3]
+- Updated dependencies [033d656]
+- Updated dependencies [f61ccf3]
+- Updated dependencies [e61fa66]
+- Updated dependencies [f71bcfb]
+- Updated dependencies [24dd1d1]
+- Updated dependencies [a104fa7]
+- Updated dependencies [12cdec3]
+- Updated dependencies [9a9f5c2]
+- Updated dependencies [65c0449]
+- Updated dependencies [8a1b8c4]
+- Updated dependencies [f10e709]
+- Updated dependencies [3188607]
+- Updated dependencies [1f11bf3]
+- Updated dependencies [4e00d85]
+- Updated dependencies [9797718]
+- Updated dependencies [4f4f3ee]
+- Updated dependencies [d22e974]
+- Updated dependencies [88298d5]
+- Updated dependencies [9c878e2]
+- Updated dependencies [2f68f71]
+- Updated dependencies [b673bfa]
+- Updated dependencies [8540b93]
+- Updated dependencies [9254424]
+- Updated dependencies [81eafad]
+- Updated dependencies [4c03455]
+- Updated dependencies [3e68ec2]
+- Updated dependencies [08d24da]
+- Updated dependencies [3137076]
+- Updated dependencies [157c31e]
+- Updated dependencies [feeed7a]
+- Updated dependencies [4cc71ee]
+- Updated dependencies [8330f0c]
+- Updated dependencies [5990fd0]
+- Updated dependencies [d0f99b4]
+- Updated dependencies [a039d2e]
+- Updated dependencies [b6eeb3e]
+- Updated dependencies [e63b5dd]
+- Updated dependencies [d99292e]
+- Updated dependencies [1423647]
+- Updated dependencies [392d7cd]
+- Updated dependencies [e723c09]
+- Updated dependencies [9783ba8]
+- Updated dependencies [edefaf9]
+- Updated dependencies [9fe7d4f]
+- Updated dependencies [8c73da3]
+- Updated dependencies [8572be4]
+- Updated dependencies [df9b158]
+- Updated dependencies [6cdf20c]
+- Updated dependencies [f63a497]
+- Updated dependencies [eb83b66]
+- Updated dependencies [7fdf9c2]
+- Updated dependencies [aafec7f]
+- Updated dependencies [955ace6]
+- Updated dependencies [cc72dcc]
+- Updated dependencies [320c4c0]
+- Updated dependencies [1ad3001]
+- Updated dependencies [91fe8bb]
+- Updated dependencies [7c2bf58]
+- Updated dependencies [100fc95]
+- Updated dependencies [4423c35]
+- Updated dependencies [cab83ce]
+- Updated dependencies [e19f046]
+- Updated dependencies [08ae0f6]
+- Updated dependencies [1956396]
+- Updated dependencies [a049abf]
+- Updated dependencies [ec55e54]
+- Updated dependencies [5834c81]
+- Updated dependencies [d7606d3]
+- Updated dependencies [77d9497]
+- Updated dependencies [356897c]
+- Updated dependencies [cac51cb]
+- Updated dependencies [0ef793f]
+- Updated dependencies [84ca649]
+- Updated dependencies [d9fd0ab]
+- Updated dependencies [a6128a3]
+- Updated dependencies [9c04caa]
+- Updated dependencies [e026112]
+- Updated dependencies [0088ede]
+- Updated dependencies [60349b8]
+- Updated dependencies [94759f7]
+- Updated dependencies [40988de]
+- Updated dependencies [d0e894d]
+  - @breadboard-ai/build@0.10.0
+  - @breadboard-ai/visual-editor@1.19.0
+  - @google-labs/core-kit@0.15.0
+  - @google-labs/breadboard@0.27.0
+  - @google-labs/template-kit@0.3.10
+  - @breadboard-ai/import@0.1.10
+
 ## 0.11.1
 
 ### Patch Changes
